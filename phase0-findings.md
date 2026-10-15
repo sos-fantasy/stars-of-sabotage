@@ -8,7 +8,7 @@ October 15, 2026. Data pulled with nflreadpy 0.1.5. Covers 2026 weeks 1 to 5 (79
 |---|---|
 | Real nflverse schemas, fix 4.1 | Done. All expected columns exist. Brief section 4.1 updated |
 | Scoring engine | Built. `config/scoring.yml`, `pipeline/score.py`, 31 hand-computed tests passing |
-| Settle 3.3 against the league | Settled except Q2: raw or Yahoo's points-allowed rule |
+| Settle 3.3 against the league | Done. All 7 settled; points allowed uses Yahoo's rule |
 | NFL.com and nflverse terms | Read. Summary below. The open risk stays open |
 | Video channel, title pattern, embed test | Partly done. See below. NFL Rush titles not confirmed |
 | GitHub scheduled-workflow rule | Confirmed: public repos, 60 days without activity |
@@ -17,7 +17,7 @@ October 15, 2026. Data pulled with nflreadpy 0.1.5. Covers 2026 weeks 1 to 5 (79
 
 ## Scoring results, weeks 1 to 5 (league rules)
 
-Rules applied: stacking on, raw points allowed, blocked kicks count as misses, fumbles by QB/RB/FB/WR/TE on offensive plays (including QB snap fumbles) and on kick and punt returns.
+Rules applied: stacking on, Yahoo points-allowed rule, blocked kicks count as misses, fumbles by QB/RB/FB/WR/TE on offensive plays (including QB snap fumbles) and on kick and punt returns.
 
 Fumbles are counted from play-by-play. nflverse's sack, rushing, and receiving fumble columns miss aborted and dropped snaps; 4 QB snap fumbles turned up through week 5 (Jones wk 3, Maye wk 4, Hurts wk 5, Stroud wk 5). Lost fumbles reconcile exactly with the stat columns (78 = 78). Total fumbles run 167 against the columns' 163, the difference being those 4 snaps.
 
@@ -27,7 +27,7 @@ Top 10 players (all QBs): Herbert LAC 357, Shough NO 332, Watson CLE 320, Willis
 
 Top 5 by position. RB: Gibbs DET 176, Cook BUF 157, B. Robinson ATL 152, A. Jones MIN 145, J. Taylor IND 144. WR: St. Brown DET 88, Lamb DAL 80, Olave NO 78, McMillan CAR 76, Smith-Njigba SEA 75. TE: McBride ARI 84, Likely NYG 73, J. Johnson NO 67, Bowers LV 65, Warren IND 63. K: Smack GB 74, Stevens WAS 72, Pineiro SF 68, Carlson NO 56, Mevis LA 54.
 
-Top 5 defenses: ARI 182 (162 allowed), NO 168, WAS 168, DET 168, BUF 161. No shutouts yet.
+Top 5 defenses (Yahoo rule): ARI 175, WAS 168, DET 168, NO 168, BUF 161. No shutouts yet.
 
 ## Yahoo validation (October 15, 2026)
 
@@ -57,8 +57,8 @@ Owner check: open youtube.com/@NFLRush/videos and tell me whether the worst-play
 
 ## Owner decisions needed
 
-1. Points allowed: raw (your ruling) or Yahoo's rule (matches your league's screens).
-2. Resolved: return fumbles count, shutout scores 0.
+1. Resolved: Yahoo points-allowed rule, return fumbles count, shutout scores 0.
+2. Method page drafted at `site/method.html`; owner review pending.
 3. Which channel carries the worst-plays video you want.
 4. Deploy path A, B, or C (brief 5.2). I recommend A.
 5. Public or private GitHub repo. Private avoids the 60-day rule. Before choosing private, I will check the current free Actions minutes for private repos against an hourly schedule.
