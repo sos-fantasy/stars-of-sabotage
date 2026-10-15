@@ -7,8 +7,8 @@ October 15, 2026. Data pulled with nflreadpy 0.1.5. Covers 2026 weeks 1 to 5 (79
 | Phase 0 item | Status |
 |---|---|
 | Real nflverse schemas, fix 4.1 | Done. All expected columns exist. Brief section 4.1 updated |
-| Scoring engine | Built. `config/scoring.yml`, `pipeline/score.py`, 30 hand-computed tests passing |
-| Settle 3.3 against the league | Owner ruled on all 7 (brief 3.3). Two items left: return fumbles, and a 0-point shutout |
+| Scoring engine | Built. `config/scoring.yml`, `pipeline/score.py`, 31 hand-computed tests passing |
+| Settle 3.3 against the league | Settled except Q2: raw or Yahoo's points-allowed rule |
 | NFL.com and nflverse terms | Read. Summary below. The open risk stays open |
 | Video channel, title pattern, embed test | Partly done. See below. NFL Rush titles not confirmed |
 | GitHub scheduled-workflow rule | Confirmed: public repos, 60 days without activity |
@@ -17,7 +17,7 @@ October 15, 2026. Data pulled with nflreadpy 0.1.5. Covers 2026 weeks 1 to 5 (79
 
 ## Scoring results, weeks 1 to 5 (league rules)
 
-Rules applied: stacking on, raw points allowed, blocked kicks count as misses, fumbles by QB/RB/FB/WR/TE on offensive plays (including QB snap fumbles), return fumbles excluded pending check.
+Rules applied: stacking on, raw points allowed, blocked kicks count as misses, fumbles by QB/RB/FB/WR/TE on offensive plays (including QB snap fumbles) and on kick and punt returns.
 
 Fumbles are counted from play-by-play. nflverse's sack, rushing, and receiving fumble columns miss aborted and dropped snaps; 4 QB snap fumbles turned up through week 5 (Jones wk 3, Maye wk 4, Hurts wk 5, Stroud wk 5). Lost fumbles reconcile exactly with the stat columns (78 = 78). Total fumbles run 167 against the columns' 163, the difference being those 4 snaps.
 
@@ -25,22 +25,19 @@ Hand check, Justin Herbert: 58 incompletions x2 = 116, 17 sacks x5 = 85, 24 carr
 
 Top 10 players (all QBs): Herbert LAC 357, Shough NO 332, Watson CLE 320, Willis MIA 316, Maye NE 314, D. Jones IND 293, Rodgers PIT 290, Brissett ARI 284, Stafford LA 281, Love GB 278.
 
-Top 5 by position. RB: Gibbs DET 176, Cook BUF 157, B. Robinson ATL 152, A. Jones MIN 145, J. Taylor IND 144. WR: St. Brown DET 81, Lamb DAL 80, Olave NO 78, McMillan CAR 76, Smith-Njigba SEA 75. TE: McBride ARI 84, Likely NYG 73, J. Johnson NO 67, Bowers LV 65, Warren IND 63. K: Smack GB 74, Stevens WAS 72, Pineiro SF 68, Carlson NO 56, Mevis LA 54.
+Top 5 by position. RB: Gibbs DET 176, Cook BUF 157, B. Robinson ATL 152, A. Jones MIN 145, J. Taylor IND 144. WR: St. Brown DET 88, Lamb DAL 80, Olave NO 78, McMillan CAR 76, Smith-Njigba SEA 75. TE: McBride ARI 84, Likely NYG 73, J. Johnson NO 67, Bowers LV 65, Warren IND 63. K: Smack GB 74, Stevens WAS 72, Pineiro SF 68, Carlson NO 56, Mevis LA 54.
 
 Top 5 defenses: ARI 182 (162 allowed), NO 168, WAS 168, DET 168, BUF 161. No shutouts yet.
 
-## Spot checks for the owner (Yahoo, by eye)
+## Yahoo validation (October 15, 2026)
 
-| Player-week | Our score | What it tests |
-|---|---|---|
-| Baker Mayfield TB wk 1 | 86 | Stacked lost fumble |
-| Matthew Stafford LA wk 3 | 113 | Pick six = 31 |
-| Daniel Jones IND wk 3 | 98 | Aborted snap plus 2 lost fumbles |
-| Jalen Hurts PHI wk 5 | 59 | Aborted snap |
-| Cairo Santos CHI wk 2 | 18 | Blocked 23-yard FG |
-| Drew Stevens WAS wk 1 | 28 | Blocked PAT |
-| ARI defense wk 4 | 42 | 36 allowed, raw |
-| KaVontae Turpin DAL wk 5 | 4 (21 if return fumbles count) | Open: return fumbles |
+The owner sent Yahoo game logs for Mayfield (wks 1-3), Stafford (wks 1-5), D. Jones (wks 1-5), Santos (wks 1-5), Turpin (wk 5), and the ARI defense (wks 1-5). Yahoo numbers stay in chat and are not stored in the repo.
+
+Players: 19 of 19 player-weeks match exactly with return fumbles counted.
+
+Defense: raw points allowed matches 4 of 5 ARI weeks and misses wk 4 (raw 42, Yahoo 35). Yahoo's help page (SLN6441) leaves interception and fumble return TDs, blocked FG return TDs, safeties, and defensive two-point returns out of Points Allowed. NYG's 36 in wk 4 included a 6-point pick six, so Yahoo used 30. The `yahoo` mode in the engine matches all 5 ARI weeks.
+
+Under the `yahoo` rule, 12 defense-weeks lose points from the opponent's score and 6 change bucket: TB wk 1 (35 to 28), LA wk 3 (35 to 28), SEA wk 3 (35 to 28), ARI wk 4 (42 to 35), BAL wk 5 (28 to 21), SEA wk 5 (35 to 28).
 
 ## Terms and licensing
 
@@ -60,8 +57,8 @@ Owner check: open youtube.com/@NFLRush/videos and tell me whether the worst-play
 
 ## Owner decisions needed
 
-1. Turpin wk 5 in Yahoo (4 or 21) to settle return fumbles, plus the other spot checks.
-2. Shutout scoring: 0 points (current assumption) or something else.
+1. Points allowed: raw (your ruling) or Yahoo's rule (matches your league's screens).
+2. Resolved: return fumbles count, shutout scores 0.
 3. Which channel carries the worst-plays video you want.
 4. Deploy path A, B, or C (brief 5.2). I recommend A.
 5. Public or private GitHub repo. Private avoids the 60-day rule. Before choosing private, I will check the current free Actions minutes for private repos against an hourly schedule.

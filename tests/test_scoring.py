@@ -89,8 +89,9 @@ def test_returner_scrimmage_only():
 
 
 def test_returner_with_returns():
-    # 13 + return fumble 7 + lost 10 -> 30
+    # 13 + return fumble 7 + lost 10 -> 30. League default since the owner's Yahoo check.
     assert total([RET], RET_PBP, fumble_scope="scrimmage_and_returns")["WR1"] == 30
+    assert total([RET], RET_PBP)["WR1"] == 30
 
 
 def test_center_snap_fumble_not_scored():
@@ -177,3 +178,30 @@ def test_defense_points_allowed_modes():
     assert (aaa_off["points_allowed"], aaa_off["sabotage_pts"]) == (14, 21)
     # BBB allowed 10 -> 14
     assert raw.filter(pl.col("team") == "BBB")["sabotage_pts"][0] == 14
+
+
+def test_defense_yahoo_points_allowed():
+    # BBB scores 30: a pick six (6) + PAT (1), a safety (2), a punt return TD (6) + PAT (1),
+    # and 14 from offense. Yahoo removes the pick six TD and the safety only:
+    # 30 - 6 - 2 = 22 -> 21-27 bucket -> 28. Raw: 30 -> 28-34 -> 35.
+    sched = pl.DataFrame({"game_id": ["G1"], "season": [2026], "week": [1], "home_team": ["AAA"],
+                          "away_team": ["BBB"], "home_score": [0], "away_score": [30]})
+    p = pbp([
+        {"game_id": "G1", "play_id": 1, "play_type": "pass", "posteam": "AAA", "defteam": "BBB",
+         "td_team": "BBB", "touchdown": 1, "return_touchdown": 1, "interception": 1},
+        {"game_id": "G1", "play_id": 2, "play_type": "extra_point", "posteam": "BBB", "defteam": "AAA",
+         "extra_point_result": "good"},
+        {"game_id": "G1", "play_id": 3, "play_type": "run", "posteam": "AAA", "defteam": "BBB", "safety": 1},
+        {"game_id": "G1", "play_id": 4, "play_type": "punt", "posteam": "AAA", "defteam": "BBB",
+         "td_team": "BBB", "touchdown": 1, "return_touchdown": 1},
+        {"game_id": "G1", "play_id": 5, "play_type": "extra_point", "posteam": "BBB", "defteam": "AAA",
+         "extra_point_result": "good"},
+    ])
+    y = score.score_defenses(sched, p, score.load_config(points_allowed="yahoo"))
+    r = score.score_defenses(sched, p, score.load_config(points_allowed="raw"))
+    aaa_y = y.filter(pl.col("team") == "AAA").row(0, named=True)
+    aaa_r = r.filter(pl.col("team") == "AAA").row(0, named=True)
+    assert (aaa_y["points_allowed"], aaa_y["sabotage_pts"]) == (22, 28)
+    assert (aaa_r["points_allowed"], aaa_r["sabotage_pts"]) == (30, 35)
+    # AAA scored 0 -> BBB defense gets 0 (owner ruling: a shutout is not sabotage)
+    assert y.filter(pl.col("team") == "BBB").row(0, named=True)["sabotage_pts"] == 0

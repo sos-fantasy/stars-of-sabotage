@@ -79,7 +79,7 @@ kicker:
   pat_missed: 16
 defense:
   points_allowed:
-    "0": 0        # assumption: the sheet lists no 0-point bucket
+    "0": 0        # owner ruling: a shutout is not sabotage
     "1-6": 7
     "7-13": 14
     "14-20": 21
@@ -93,14 +93,14 @@ Every scored row stores the `scoring_version` that produced it. If the league ch
 ### 3.3 Interpretation rulings (owner answers, October 14, 2026)
 
 1. Stacking: yes. A lost fumble scores 7 + 10 = 17. A pick six scores 10 + 21 = 31.
-2. Points allowed: the raw opponent score, including points the opponent scored on defense or special teams.
+2. Points allowed: owner ruled raw opponent score. His league's Yahoo screens instead follow Yahoo's documented rule (help.yahoo.com/kb/SLN6441.html): drop interception and fumble return TDs, blocked FG return TDs, all safeties, and defensive two-point returns; keep kick and punt return TDs and all PATs. Evidence: ARI wk 4 vs NYG (36 scored, 6 on a pick six) shows 35 in Yahoo, which is the 28-34 bucket. The `yahoo` mode reproduces all 5 ARI weeks. OPEN: owner to choose `raw` or `yahoo`.
 3. Blocked field goals and blocked PATs count as misses, bucketed by the attempt's distance.
-4. Fumbles count for offensive players only (QB, RB, WR, TE; FB treated as RB). Defensive players' fumbles do not count. Counted from play-by-play, so aborted and dropped snaps by a QB count (nflverse's sack, rushing, and receiving fumble columns leave these out). OPEN: whether kick and punt return fumbles by an offensive player count. Default excludes them until checked against Yahoo.
+4. Fumbles count for offensive players only (QB, RB, WR, TE; FB treated as RB). Defensive players' fumbles do not count. Counted from play-by-play, so aborted and dropped snaps by a QB count (nflverse's sack, rushing, and receiving fumble columns leave these out). Kick and punt return fumbles by an offensive player count (confirmed: Turpin wk 5 = 21 in Yahoo).
 5. FG distance is the kick distance: spot of the hold to the goalposts, the number in the official play text ("54 yard field goal"). nflverse buckets are 0-19, 20-29, 30-39, 40-49, 50-59, 60+. The league's 50+ bucket combines the last two.
 6. Any offensive player's rushing attempt counts. nflverse includes QB kneel-downs as carries.
 7. Sacks are sacks taken by the QB. nflverse counts QB spikes as incomplete passes.
 
-Still assumed: a shutout (0 points allowed) scores 0. The league sheet lists no 0-point bucket.
+A shutout (0 points allowed) scores 0 (owner ruling, October 15, 2026).
 
 ### 3.4 Validation procedure
 
@@ -141,7 +141,7 @@ Checked against nflreadpy 0.1.5 with 2026 data (player stats: 5,506 rows, 150 co
 | Reception | `receptions` |
 | Fumble | play-by-play: `fumbled_1_player_id` and `fumbled_2_player_id` on `play_type` pass, run, qb_kneel, qb_spike where the fumbler's team (`fumbled_N_team`) equals `posteam`; positions QB, RB, FB, WR, TE only. Reconciles to `sack_fumbles` + `rushing_fumbles` + `receiving_fumbles` plus QB snap fumbles (167 vs 163 through week 5) |
 | Fumble lost | play-by-play `fumble_lost` = 1, credited to the last fumbler on the first fumbler's team. Reconciles exactly to `sack_fumbles_lost` + `rushing_fumbles_lost` + `receiving_fumbles_lost` (78 through week 5) |
-| Return fumbles (open, see 3.3 Q4) | same, with `play_type` kickoff or punt |
+| Return fumbles (counted) | same, with `play_type` kickoff or punt |
 | Interception thrown | `passing_interceptions` (109 through week 5, matches the play-by-play count) |
 | Pick six thrown | play-by-play: `interception` = 1 and `return_touchdown` = 1, credited to `passer_player_id` (6 through week 5) |
 | FG missed by distance | `fg_missed_0_19`, `fg_missed_20_29`, `fg_missed_30_39`, `fg_missed_40_49`, `fg_missed_50_59` plus `fg_missed_60_` for the 50+ bucket. The buckets sum to `fg_missed` on all 146 kicker rows |

@@ -184,6 +184,24 @@ def non_offensive_points(pbp: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def yahoo_excluded_points(pbp: pl.DataFrame) -> pl.DataFrame:
+    """Points a team scored that Yahoo leaves out of its opponent's Points Allowed
+    (help.yahoo.com/kb/SLN6441.html, read October 15, 2026): interception and
+    fumble return TDs on scrimmage plays, blocked field goal return TDs, all
+    safeties, and defensive two-point returns. Kick and punt return TDs and all
+    PATs still count, so the try after an excluded TD is not removed."""
+    scrim = pl.col("play_type").is_in(SCRIMMAGE_PLAYS)
+    blocked_fg = (pl.col("play_type") == "field_goal") & (pl.col("field_goal_result") == "blocked")
+    def_td = (pl.col("touchdown") == 1) & pl.col("td_team").is_not_null() & (pl.col("td_team") == pl.col("defteam")) & (scrim | blocked_fg)
+    parts = [
+        pbp.filter(def_td).select("game_id", pl.col("td_team").alias("team"), pl.lit(6, dtype=pl.Int64).alias("excl_pts")),
+        pbp.filter(pl.col("safety") == 1).select("game_id", pl.col("defteam").alias("team"), pl.lit(2, dtype=pl.Int64).alias("excl_pts")),
+        pbp.filter(pl.col("defensive_two_point_conv") == 1).select(
+            "game_id", pl.col("defteam").alias("team"), pl.lit(2, dtype=pl.Int64).alias("excl_pts")),
+    ]
+    return pl.concat(parts).group_by(["game_id", "team"]).agg(pl.col("excl_pts").sum())
+
+
 def pa_points(points_allowed: int, table: dict) -> tuple[str, int]:
     if points_allowed <= 0:
         return "0", table["0"]
@@ -209,11 +227,22 @@ def score_defenses(schedules: pl.DataFrame, pbp: pl.DataFrame, cfg: dict) -> pl.
                  pl.col("home_team").alias("opponent"), pl.col("home_score").alias("opp_score")),
     ])
     nop = non_offensive_points(pbp).rename({"team": "opponent", "non_off_pts": "opp_non_off_pts"})
-    sides = sides.join(nop, on=["game_id", "opponent"], how="left").fill_null(0)
-    if cfg["interpretation"]["points_allowed"] == "offense_only":
-        sides = sides.with_columns((pl.col("opp_score") - pl.col("opp_non_off_pts")).alias("points_allowed"))
+    yex = yahoo_excluded_points(pbp).rename({"team": "opponent", "excl_pts": "opp_yahoo_excluded"})
+    sides = (
+        sides.join(nop, on=["game_id", "opponent"], how="left")
+        .join(yex, on=["game_id", "opponent"], how="left")
+        .fill_null(0)
+    )
+    mode = cfg["interpretation"]["points_allowed"]
+    if mode == "offense_only":
+        pa = pl.col("opp_score") - pl.col("opp_non_off_pts")
+    elif mode == "yahoo":
+        pa = pl.col("opp_score") - pl.col("opp_yahoo_excluded")
+    elif mode == "raw":
+        pa = pl.col("opp_score")
     else:
-        sides = sides.with_columns(pl.col("opp_score").alias("points_allowed"))
+        raise ValueError(f"unknown points_allowed mode: {mode}")
+    sides = sides.with_columns(pa.alias("points_allowed"))
     table = cfg["defense"]["points_allowed"]
     res = [pa_points(v, table) for v in sides["points_allowed"].to_list()]
     return sides.with_columns(
