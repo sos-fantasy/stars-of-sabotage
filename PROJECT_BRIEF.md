@@ -90,17 +90,17 @@ defense:
 
 Every scored row stores the `scoring_version` that produced it. If the league changes rules, add a new version and rescore. Never edit a past version in place.
 
-### 3.3 Interpretation questions to settle in Phase 0
+### 3.3 Interpretation rulings (owner answers, October 14, 2026)
 
-The sheet does not answer these. Do not guess silently. Compute the options, show the owner the differences, and let him pick the one that matches his league's Yahoo totals.
+1. Stacking: yes. A lost fumble scores 7 + 10 = 17. A pick six scores 10 + 21 = 31.
+2. Points allowed: the raw opponent score, including points the opponent scored on defense or special teams.
+3. Blocked field goals and blocked PATs count as misses, bucketed by the attempt's distance.
+4. Fumbles count for offensive players only (QB, RB, WR, TE; FB treated as RB). Defensive players' fumbles do not count. Counted from play-by-play, so aborted and dropped snaps by a QB count (nflverse's sack, rushing, and receiving fumble columns leave these out). OPEN: whether kick and punt return fumbles by an offensive player count. Default excludes them until checked against Yahoo.
+5. FG distance is the kick distance: spot of the hold to the goalposts, the number in the official play text ("54 yard field goal"). nflverse buckets are 0-19, 20-29, 30-39, 40-49, 50-59, 60+. The league's 50+ bucket combines the last two.
+6. Any offensive player's rushing attempt counts. nflverse includes QB kneel-downs as carries.
+7. Sacks are sacks taken by the QB. nflverse counts QB spikes as incomplete passes.
 
-1. Do Fumble (7) and Fumble Lost (10) stack, so a lost fumble is 17? Same question for Interception (10) plus Pick Six (21), which would make a pick six 31.
-2. Points allowed: raw opponent score, or opponent score minus points the opponent scored with its defense or special teams (pick sixes, return touchdowns, safeties)? Yahoo and other platforms differ here.
-3. Do blocked field goals and blocked PATs count as misses?
-4. Does "Fumbles" include fumbles on kick and punt returns, or offensive plays only?
-5. Distance buckets: which yardage defines a field goal's distance (nflverse's kick distance field) and does it match the league's?
-6. Does a QB's rushing attempt count for Rushing Attempts? (Assumed yes: any player with a carry.)
-7. Is the Sacks stat sacks taken by a QB? (Assumed yes.)
+Still assumed: a shutout (0 points allowed) scores 0. The league sheet lists no 0-point bucket.
 
 ### 3.4 Validation procedure
 
@@ -139,9 +139,9 @@ Checked against nflreadpy 0.1.5 with 2026 data (player stats: 5,506 rows, 150 co
 | Sack taken | `sacks_suffered` |
 | Rush attempt | `carries` |
 | Reception | `receptions` |
-| Fumble (offense only) | `sack_fumbles` + `rushing_fumbles` + `receiving_fumbles` |
-| Fumble (all, for Q4 in 3.3) | `fumbles_total` (adds kick and punt return fumbles and snap fumbles) |
-| Fumble lost | offense: `sack_fumbles_lost` + `rushing_fumbles_lost` + `receiving_fumbles_lost`. All: `fumbles_lost_total` |
+| Fumble | play-by-play: `fumbled_1_player_id` and `fumbled_2_player_id` on `play_type` pass, run, qb_kneel, qb_spike where the fumbler's team (`fumbled_N_team`) equals `posteam`; positions QB, RB, FB, WR, TE only. Reconciles to `sack_fumbles` + `rushing_fumbles` + `receiving_fumbles` plus QB snap fumbles (167 vs 163 through week 5) |
+| Fumble lost | play-by-play `fumble_lost` = 1, credited to the last fumbler on the first fumbler's team. Reconciles exactly to `sack_fumbles_lost` + `rushing_fumbles_lost` + `receiving_fumbles_lost` (78 through week 5) |
+| Return fumbles (open, see 3.3 Q4) | same, with `play_type` kickoff or punt |
 | Interception thrown | `passing_interceptions` (109 through week 5, matches the play-by-play count) |
 | Pick six thrown | play-by-play: `interception` = 1 and `return_touchdown` = 1, credited to `passer_player_id` (6 through week 5) |
 | FG missed by distance | `fg_missed_0_19`, `fg_missed_20_29`, `fg_missed_30_39`, `fg_missed_40_49`, `fg_missed_50_59` plus `fg_missed_60_` for the 50+ bucket. The buckets sum to `fg_missed` on all 146 kicker rows |

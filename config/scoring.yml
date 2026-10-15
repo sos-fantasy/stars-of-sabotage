@@ -27,11 +27,12 @@ defense:
     "28-34": 35
     "35+": 42
 
-# Interpretation switches (brief section 3.3). Defaults are placeholders
-# until the owner confirms which combination matches the league.
+# Interpretation switches (brief section 3.3). Values confirmed by the owner
+# on October 14, 2026, except fumble_scope, which awaits one Yahoo check.
 interpretation:
-  stack_fumble_lost: true      # Q1: lost fumble = 7 + 10. false = 10 only
-  stack_pick_six: true         # Q1: pick six = 10 + 21. false = 21 only
-  points_allowed: raw          # Q2: raw | offense_only (drop opponent D/ST TDs, safeties)
-  blocked_kicks_are_misses: false   # Q3
-  fumble_scope: offense        # Q4: offense (sack+rush+rec) | all (adds returns, snaps)
+  stack_fumble_lost: true      # Q1 confirmed: lost fumble = 7 + 10 = 17
+  stack_pick_six: true         # Q1 confirmed: pick six = 10 + 21 = 31
+  points_allowed: raw          # Q2 confirmed: raw opponent score
+  blocked_kicks_are_misses: true    # Q3 confirmed: any attempted FG or PAT that fails
+  fumble_scope: scrimmage      # Q4: scrimmage | scrimmage_and_returns (kick and punt returns)
+  fumble_positions: [QB, RB, FB, WR, TE]   # Q4 confirmed: offensive players only

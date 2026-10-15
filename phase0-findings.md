@@ -7,65 +7,40 @@ October 15, 2026. Data pulled with nflreadpy 0.1.5. Covers 2026 weeks 1 to 5 (79
 | Phase 0 item | Status |
 |---|---|
 | Real nflverse schemas, fix 4.1 | Done. All expected columns exist. Brief section 4.1 updated |
-| Scoring engine with 3.3 options | Built. `config/scoring.yml`, `pipeline/score.py`, 19 hand-computed tests passing |
-| Settle 3.3 against the league | Waiting on owner: check the player-weeks listed below in Yahoo |
+| Scoring engine | Built. `config/scoring.yml`, `pipeline/score.py`, 30 hand-computed tests passing |
+| Settle 3.3 against the league | Owner ruled on all 7 (brief 3.3). Two items left: return fumbles, and a 0-point shutout |
 | NFL.com and nflverse terms | Read. Summary below. The open risk stays open |
 | Video channel, title pattern, embed test | Partly done. See below. NFL Rush titles not confirmed |
 | GitHub scheduled-workflow rule | Confirmed: public repos, 60 days without activity |
 | Deploy path (5.2) | Waiting on owner |
 | NFL Savant screenshots | Waiting on owner |
 
-## Scoring results, weeks 1 to 5
+## Scoring results, weeks 1 to 5 (league rules)
 
-Default settings used for the tables: fumbles and lost fumbles stack, interceptions and pick sixes stack, offense-only fumbles, blocked kicks ignored, raw points allowed.
+Rules applied: stacking on, raw points allowed, blocked kicks count as misses, fumbles by QB/RB/FB/WR/TE on offensive plays (including QB snap fumbles), return fumbles excluded pending check.
 
-Hand check on the top player, Justin Herbert: 58 incompletions x2 = 116, 17 sacks x5 = 85, 24 carries x1 = 24, 6 fumbles x7 = 42, 2 lost x10 = 20, 7 interceptions x10 = 70. Total 357.
+Fumbles are counted from play-by-play. nflverse's sack, rushing, and receiving fumble columns miss aborted and dropped snaps; 4 QB snap fumbles turned up through week 5 (Jones wk 3, Maye wk 4, Hurts wk 5, Stroud wk 5). Lost fumbles reconcile exactly with the stat columns (78 = 78). Total fumbles run 167 against the columns' 163, the difference being those 4 snaps.
 
-Top 10 players (all QBs): Herbert LAC 357, Shough NO 332, Watson CLE 320, Willis MIA 316, Maye NE 307, Rodgers PIT 290, D. Jones IND 286, Brissett ARI 284, Stafford LA 281, Love GB 278.
+Hand check, Justin Herbert: 58 incompletions x2 = 116, 17 sacks x5 = 85, 24 carries x1 = 24, 6 fumbles x7 = 42, 2 lost x10 = 20, 7 interceptions x10 = 70. Total 357.
 
-Top 3 by position. RB: Gibbs DET 176, Cook BUF 157, B. Robinson ATL 152. WR: St. Brown DET 81, Lamb DAL 80, Olave NO 78. TE: McBride ARI 84, Likely NYG 73, J. Johnson NO 67. K: Smack GB 60, Pineiro SF 56, Stevens WAS 56.
+Top 10 players (all QBs): Herbert LAC 357, Shough NO 332, Watson CLE 320, Willis MIA 316, Maye NE 314, D. Jones IND 293, Rodgers PIT 290, Brissett ARI 284, Stafford LA 281, Love GB 278.
 
-Top 5 defenses (raw points allowed): ARI 182 (162 allowed), NO 168, WAS 168, DET 168, BUF 161. Under offense-only points allowed, ARI drops to 175 and the rest hold.
+Top 5 by position. RB: Gibbs DET 176, Cook BUF 157, B. Robinson ATL 152, A. Jones MIN 145, J. Taylor IND 144. WR: St. Brown DET 81, Lamb DAL 80, Olave NO 78, McMillan CAR 76, Smith-Njigba SEA 75. TE: McBride ARI 84, Likely NYG 73, J. Johnson NO 67, Bowers LV 65, Warren IND 63. K: Smack GB 74, Stevens WAS 72, Pineiro SF 68, Carlson NO 56, Mevis LA 54.
 
-## Validation list for the owner
+Top 5 defenses: ARI 182 (162 allowed), NO 168, WAS 168, DET 168, BUF 161. No shutouts yet.
 
-Check these in Yahoo. Each one separates the options for one question. Report the Yahoo number and I will lock the config.
+## Spot checks for the owner (Yahoo, by eye)
 
-Q1, stacking (fumble + lost fumble, interception + pick six):
-
-| Player-week | Stacked | Not stacked |
+| Player-week | Our score | What it tests |
 |---|---|---|
-| Baker Mayfield TB wk 1 | 86 | 65 |
-| Matthew Stafford LA wk 3 (pick six) | 113 | 103 |
-| Jacoby Brissett ARI wk 4 (pick six) | 93 | 83 |
-| Jahmyr Gibbs DET wk 1 | 56 | 49 |
-
-Q4, return and snap fumbles:
-
-| Player-week | Offense only | All fumbles |
-|---|---|---|
-| KaVontae Turpin DAL wk 5 | 4 | 21 |
-| Isaiah Williams NYJ wk 2 | 13 | 27 |
-| Amon-Ra St. Brown DET wk 5 | 19 | 26 |
-
-Q3, blocked kicks:
-
-| Player-week | Blocks ignored | Blocks count as misses |
-|---|---|---|
-| Drew Stevens WAS wk 1 (blocked PAT) | 12 | 28 |
-| Cairo Santos CHI wk 2 (blocked 23-yard FG) | 0 | 18 |
-
-Q2, points allowed:
-
-| Defense-week | Raw | Offense only |
-|---|---|---|
-| ARI wk 4 vs NYG (36 allowed, 7 off a pick six) | 42 | 35 |
-| LA wk 3 vs DEN (30 allowed, 7 off a pick six) | 35 | 28 |
-| TB wk 3 vs MIN (23 allowed, 7 off a punt return) | 28 | 21 |
-
-Q5, kick distance: nflverse buckets by the kick's total distance from the spot to the goalposts, the same number broadcasts use. The kicker rows above will confirm it matches.
-
-Q6 and Q7 checks: nflverse counts QB kneel-downs as carries (Drake Maye's 30 carries include 7 kneels; 125 kneels league-wide) and spikes as incomplete passes (24 so far). This follows official NFL stat rules. If Yahoo shows fewer points for a QB who kneeled, this is the cause.
+| Baker Mayfield TB wk 1 | 86 | Stacked lost fumble |
+| Matthew Stafford LA wk 3 | 113 | Pick six = 31 |
+| Daniel Jones IND wk 3 | 98 | Aborted snap plus 2 lost fumbles |
+| Jalen Hurts PHI wk 5 | 59 | Aborted snap |
+| Cairo Santos CHI wk 2 | 18 | Blocked 23-yard FG |
+| Drew Stevens WAS wk 1 | 28 | Blocked PAT |
+| ARI defense wk 4 | 42 | 36 allowed, raw |
+| KaVontae Turpin DAL wk 5 | 4 (21 if return fumbles count) | Open: return fumbles |
 
 ## Terms and licensing
 
@@ -85,12 +60,13 @@ Owner check: open youtube.com/@NFLRush/videos and tell me whether the worst-play
 
 ## Owner decisions needed
 
-1. Yahoo numbers for the validation list above.
-2. Which channel carries the worst-plays video you want.
-3. Deploy path A, B, or C (brief 5.2). I recommend A.
-4. Public or private GitHub repo. Private avoids the 60-day rule. Before choosing private, I will check the current free Actions minutes for private repos against an hourly schedule.
-5. Licensing approach A, B, or C above.
-6. NFL Savant screenshots.
+1. Turpin wk 5 in Yahoo (4 or 21) to settle return fumbles, plus the other spot checks.
+2. Shutout scoring: 0 points (current assumption) or something else.
+3. Which channel carries the worst-plays video you want.
+4. Deploy path A, B, or C (brief 5.2). I recommend A.
+5. Public or private GitHub repo. Private avoids the 60-day rule. Before choosing private, I will check the current free Actions minutes for private repos against an hourly schedule.
+6. Licensing approach A, B, or C above.
+7. NFL Savant screenshots.
 
 ## Sources
 

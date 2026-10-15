@@ -63,20 +63,53 @@ def blocked_kicks(pbp: pl.DataFrame) -> pl.DataFrame:
     return pl.DataFrame(rows).group_by(["game_id", "player_id"]).agg(pl.all().sum())
 
 
+SCRIMMAGE_PLAYS = ["pass", "run", "qb_kneel", "qb_spike"]
+RETURN_PLAYS = ["kickoff", "punt"]
+
+
+def fumbles(pbp: pl.DataFrame, include_returns: bool) -> pl.DataFrame:
+    """Fumbles per fumbler per game from play-by-play.
+
+    Scrimmage fumbles count when the fumbler's team had the ball. This catches
+    aborted and dropped snaps, which nflverse leaves out of the sack, rushing,
+    and receiving fumble columns. A lost fumble is credited to the last player
+    on the first fumbler's team to fumble on the play, so a defender who
+    fumbles after a recovery never takes it. Position filtering happens in
+    score_players.
+    """
+    cols = {"game_id": pl.Utf8, "player_id": pl.Utf8, "fum": pl.Int64, "fum_lost": pl.Int64}
+    kinds = SCRIMMAGE_PLAYS + (RETURN_PLAYS if include_returns else [])
+    parts = []
+    same_team_2 = pl.col("fumbled_2_player_id").is_not_null() & (pl.col("fumbled_2_team") == pl.col("fumbled_1_team"))
+    for slot in ("1", "2"):
+        last = ~same_team_2 if slot == "1" else same_team_2
+        keep = pl.col(f"fumbled_{slot}_player_id").is_not_null() & pl.col("play_type").is_in(kinds)
+        scrim_ok = pl.col("play_type").is_in(RETURN_PLAYS) | (pl.col(f"fumbled_{slot}_team") == pl.col("posteam"))
+        parts.append(
+            pbp.filter(keep & scrim_ok).select(
+                "game_id",
+                pl.col(f"fumbled_{slot}_player_id").alias("player_id"),
+                pl.lit(1, dtype=pl.Int64).alias("fum"),
+                pl.when(last & (pl.col("fumble_lost") == 1)).then(1).otherwise(0).cast(pl.Int64).alias("fum_lost"),
+            )
+        )
+    df = pl.concat(parts) if parts else pl.DataFrame(schema=cols)
+    if df.is_empty():
+        return pl.DataFrame(schema=cols)
+    return df.group_by(["game_id", "player_id"]).agg(pl.col("fum").sum(), pl.col("fum_lost").sum())
+
+
 def score_players(stats: pl.DataFrame, pbp: pl.DataFrame, cfg: dict) -> pl.DataFrame:
     o, k, it = cfg["offense"], cfg["kicker"], cfg["interpretation"]
     df = (
         stats.join(pick_sixes(pbp), on=["game_id", "player_id"], how="left")
         .join(blocked_kicks(pbp), on=["game_id", "player_id"], how="left")
+        .join(fumbles(pbp, it["fumble_scope"] == "scrimmage_and_returns"), on=["game_id", "player_id"], how="left")
         .fill_null(0)
     )
-    if it["fumble_scope"] == "all":
-        fum, fum_lost = pl.col("fumbles_total"), pl.col("fumbles_lost_total")
-    else:
-        fum = pl.col("sack_fumbles") + pl.col("rushing_fumbles") + pl.col("receiving_fumbles")
-        fum_lost = (
-            pl.col("sack_fumbles_lost") + pl.col("rushing_fumbles_lost") + pl.col("receiving_fumbles_lost")
-        )
+    eligible = pl.col("position").is_in(it["fumble_positions"])
+    fum = pl.when(eligible).then(pl.col("fum")).otherwise(0)
+    fum_lost = pl.when(eligible).then(pl.col("fum_lost")).otherwise(0)
     miss = {
         "0-19": pl.col("fg_missed_0_19"),
         "20-29": pl.col("fg_missed_20_29"),
