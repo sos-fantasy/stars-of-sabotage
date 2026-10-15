@@ -169,7 +169,7 @@ def test_defense_points_allowed_modes():
         {"game_id": "G1", "play_id": 2, "posteam": "BBB", "defteam": "AAA", "extra_point_result": "good"},
         {"game_id": "G1", "play_id": 3, "posteam": "AAA", "defteam": "BBB", "safety": 1},
     ])
-    raw = score.score_defenses(sched, p, score.load_config())  # league rule: raw
+    raw = score.score_defenses(sched, p, score.load_config(points_allowed="raw"))
     off = score.score_defenses(sched, p, score.load_config(points_allowed="offense_only"))
     aaa_raw = raw.filter(pl.col("team") == "AAA").row(0, named=True)
     aaa_off = off.filter(pl.col("team") == "AAA").row(0, named=True)
@@ -197,7 +197,8 @@ def test_defense_yahoo_points_allowed():
         {"game_id": "G1", "play_id": 5, "play_type": "extra_point", "posteam": "BBB", "defteam": "AAA",
          "extra_point_result": "good"},
     ])
-    y = score.score_defenses(sched, p, score.load_config(points_allowed="yahoo"))
+    y = score.score_defenses(sched, p, score.load_config())  # league default since Oct 15, 2026
+    assert score.load_config()["interpretation"]["points_allowed"] == "yahoo"
     r = score.score_defenses(sched, p, score.load_config(points_allowed="raw"))
     aaa_y = y.filter(pl.col("team") == "AAA").row(0, named=True)
     aaa_r = r.filter(pl.col("team") == "AAA").row(0, named=True)

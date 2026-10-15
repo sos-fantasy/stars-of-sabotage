@@ -32,8 +32,8 @@ defense:
 interpretation:
   stack_fumble_lost: true      # Q1 confirmed: lost fumble = 7 + 10 = 17
   stack_pick_six: true         # Q1 confirmed: pick six = 10 + 21 = 31
-  points_allowed: raw          # Q2: raw | yahoo | offense_only. Owner decision pending:
-                               # Yahoo's screens match "yahoo" (ARI wk 4 = 35), not raw (42)
+  points_allowed: yahoo        # Q2 confirmed Oct 15, 2026: Yahoo rule. Options: raw | yahoo | offense_only
+                               # Matches league Yahoo screens (ARI wk 4 = 35). Method page explains it
   blocked_kicks_are_misses: true    # Q3 confirmed: any attempted FG or PAT that fails
   fumble_scope: scrimmage_and_returns   # Q4 confirmed by Yahoo: Turpin wk 5 = 21 with a return fumble
   fumble_positions: [QB, RB, FB, WR, TE]   # Q4 confirmed: offensive players only
