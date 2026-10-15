@@ -1,0 +1,37 @@
+version: "2026.1"
+first_season: 2026
+offense:
+  incomplete_pass: 2
+  sack_taken: 5
+  rush_attempt: 1
+  reception: 2
+  fumble: 7
+  fumble_lost: 10
+  pick_six_thrown: 21
+  interception_thrown: 10
+kicker:
+  fg_missed:
+    "0-19": 21
+    "20-29": 18
+    "30-39": 16
+    "40-49": 14
+    "50+": 12
+  pat_missed: 16
+defense:
+  points_allowed:
+    "0": 0        # assumption: the sheet lists no 0-point bucket
+    "1-6": 7
+    "7-13": 14
+    "14-20": 21
+    "21-27": 28
+    "28-34": 35
+    "35+": 42
+
+# Interpretation switches (brief section 3.3). Defaults are placeholders
+# until the owner confirms which combination matches the league.
+interpretation:
+  stack_fumble_lost: true      # Q1: lost fumble = 7 + 10. false = 10 only
+  stack_pick_six: true         # Q1: pick six = 10 + 21. false = 21 only
+  points_allowed: raw          # Q2: raw | offense_only (drop opponent D/ST TDs, safeties)
+  blocked_kicks_are_misses: false   # Q3
+  fumble_scope: offense        # Q4: offense (sack+rush+rec) | all (adds returns, snaps)
