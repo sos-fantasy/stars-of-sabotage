@@ -59,26 +59,31 @@ const seasonInfo = (s) => DATA.seasons.find((x) => x.season === s);
 
 // ---------- load ----------
 const toObjs = ({ cols, rows }) => rows.map((r) => Object.fromEntries(cols.map((c, i) => [c, r[i]])));
+// Current-season and summary files change with the data, so they carry the data hash.
+// Past seasons only change when the scoring rules do, so they carry the rules version.
+const dv = () => DATA.meta?.data_hash || "";
+const sv = (s) => (s === DATA.meta?.season ? dv() : DATA.meta?.scoring_version || "");
 const getJSON = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
 async function ensureData() {
   if (isAll()) {
     if (!DATA.allSeasons) {
-      const [p, d] = await Promise.all([getJSON("data/player-seasons.json"), getJSON("data/defense-seasons.json")]);
+      const [p, d] = await Promise.all([getJSON(`data/player-seasons.json?v=${dv()}`), getJSON(`data/defense-seasons.json?v=${dv()}`)]);
       DATA.allSeasons = { players: toObjs(p), defense: toObjs(d) };
     }
     return;
   }
   if (!DATA.weekly.has(state.season)) {
-    const [p, d] = await Promise.all([getJSON(`data/scores-${state.season}.json`), getJSON(`data/defense-${state.season}.json`)]);
+    const [p, d] = await Promise.all([getJSON(`data/scores-${state.season}.json?v=${sv(state.season)}`), getJSON(`data/defense-${state.season}.json?v=${sv(state.season)}`)]);
     DATA.weekly.set(state.season, { players: toObjs(p), defense: toObjs(d) });
   }
 }
 
 async function init() {
   try {
-    const [meta, seasons] = await Promise.all([loadMeta(), getJSON("data/seasons.json")]);
+    const meta = await loadMeta();
     DATA.meta = meta;
+    const seasons = await getJSON(`data/seasons.json?v=${dv()}`);
     DATA.seasons = seasons;
     DEFAULTS.season = meta.season;
   } catch (e) {

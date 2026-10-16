@@ -236,18 +236,47 @@ METHOD_BODY = """
 """
 
 
+def _hash(path: Path) -> str:
+    import hashlib
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
+
+
+HTACCESS = """# Written by pipeline/site_build.py
+# Pages revalidate every visit; data refreshes within 5 minutes; versioned assets cache long.
+<IfModule mod_headers.c>
+  <FilesMatch "\\.(html)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <FilesMatch "\\.(json)$">
+    Header set Cache-Control "public, max-age=300"
+  </FilesMatch>
+  <FilesMatch "\\.(js|css|woff2|png|webp|jpg|ico)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+"""
+
+
 def build(out: Path, noindex: bool = True) -> None:
     out.mkdir(parents=True, exist_ok=True)
     shutil.copytree(SITE / "assets", out / "assets", dirs_exist_ok=True)
     shutil.copy2(SITE / "favicon.ico", out / "favicon.ico")
+    (out / ".htaccess").write_text(HTACCESS)
+    # Version tags: a new release can never pair new HTML with an old cached script.
+    a = out / "assets"
+    foot_v = _hash(a / "foot.js")
+    app = (a / "app.js").read_text().replace('from "./foot.js"', f'from "./foot.js?v={foot_v}"')
+    (a / "app.js").write_text(app)
+    v = {"css": _hash(a / "styles.css"), "app": _hash(a / "app.js"), "foot": foot_v}
+    tag = lambda html: html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
     version = escape(load_config()["version"])
-    (out / "index.html").write_text(layout(
+    (out / "index.html").write_text(tag(layout(
         "Stars of Sabotage | Sabotage fantasy football leaderboard", BOARD_BODY.replace("{version}", version),
         page="board", noindex=noindex,
-        scripts='<script type="module" src="assets/app.js"></script>'))
-    (out / "method.html").write_text(layout(
+        scripts=f'<script type="module" src="assets/app.js?v={v["app"]}"></script>')))
+    (out / "method.html").write_text(tag(layout(
         "How Sabotage scoring works | Stars of Sabotage", method_body(), page="method", noindex=noindex,
-        scripts='<script type="module" src="assets/foot.js"></script>'))
+        scripts=f'<script type="module" src="assets/foot.js?v={v["foot"]}"></script>')))
 
 
 if __name__ == "__main__":
