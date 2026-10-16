@@ -114,3 +114,28 @@ def test_record_templates_render_and_follow_house_style():
     # every scored stat has a game and a season story
     for stat, *_ in records.STATS:
         assert (stat, "game") in records.TEMPLATES and (stat, "season") in records.TEMPLATES
+
+
+def test_position_percentiles(tmp_path):
+    """Per-game rate vs qualified position peers; zero is always 0; under 4 games has none."""
+    import json
+    import export
+    cols = export.PLAYER_COLS
+
+    def row(pid, week, **v):
+        r = {c: 0 for c in cols}
+        r.update(player_id=pid, player_display_name=pid, position="QB", team="AAA", opponent_team="BBB", week=week)
+        r.update(v)
+        return [r[c] for c in cols]
+    rows = []
+    for pid, ints in (("A", 1), ("B", 2), ("C", 3)):          # 4 games each, 1/2/3 INT per game
+        rows += [row(pid, w, n_ints=ints, sabotage_pts=10 * ints) for w in range(1, 5)]
+    rows += [row("D", 1, n_ints=9, sabotage_pts=90)]          # 1 game: not qualified
+    (tmp_path / "scores-2026.json").write_text(json.dumps({"cols": cols, "rows": rows}))
+    out, idx = export.player_files(tmp_path, [2026])
+    pct = lambda pid, k: dict(zip(out[pid]["seasons"]["cols"], out[pid]["seasons"]["rows"][0]))[k]
+    # 3 qualified peers: C is highest (100), B middle (50), A lowest (0)
+    assert (pct("C", "pct_n_ints"), pct("B", "pct_n_ints"), pct("A", "pct_n_ints")) == (100, 50, 0)
+    assert pct("A", "pct_n_fg_missed") == 0                     # nobody misses kicks: 0, not 100
+    assert pct("D", "pct_n_ints") is None                       # under 4 games
+    assert [r[0] for r in idx["rows"]][0] == "C"               # search index sorted by career points

@@ -134,6 +134,10 @@ def highlights(season: int, week: int, players: pl.DataFrame, stats: pl.DataFram
 
 # ---------- Phase 2: game context, per-player files, search index ----------
 
+PCT_MIN_GAMES = 4
+PCT_STATS = ["sabotage_pts", "n_incomplete", "n_sacks", "n_ints", "n_pick_sixes", "n_fumbles", "n_fumbles_lost",
+             "n_fg_missed", "n_pat_missed", "n_carries", "n_receptions"]
+
 GAME_COLS = ["week", "game_id", "gameday", "gametime", "home_team", "away_team", "home_score", "away_score",
              "roof", "wind", "temp"]
 
@@ -181,8 +185,24 @@ def player_files(data_dir, seasons: list[int]) -> tuple[dict[str, dict], dict]:
          .with_columns(pl.when(pl.col("position") == "FB").then(pl.lit("RB")).otherwise(pl.col("position")).alias("pg"))
          .with_columns(pl.col("sabotage_pts").rank("min", descending=True).over(["season", "pg"]).cast(pl.Int64).alias("pos_rank"),
                        pl.len().over(["season", "pg"]).alias("pos_n")))
+    # Percentiles vs position peers that season, on per-game rates, among players with
+    # at least 4 games (so a one-game cameo does not set the curve). 100 = most sabotage.
+    S = S.with_columns((pl.col("g") >= PCT_MIN_GAMES).alias("_qual"),
+                       *[(pl.col(c) / pl.col("g")).alias(f"_r_{c}") for c in PCT_STATS])
+    Q = S.filter(pl.col("_qual"))
+    pct_frames = []
+    for c in PCT_STATS:
+        # Share of qualified peers at or below this rate. A zero is always 0, so a stat
+        # the whole position never records (a QB's missed kicks) does not read as 100.
+        r = pl.col(f"_r_{c}")
+        pct = (r.rank("max").over(["season", "pg"]) - 1) / (pl.len().over(["season", "pg"]) - 1).clip(lower_bound=1) * 100
+        pct_frames.append(Q.select("season", "player_id",
+                                   pl.when(r > 0).then(pct.round(0)).otherwise(0).cast(pl.Int64).alias(f"pct_{c}")))
+    for f in pct_frames:
+        S = S.join(f, on=["season", "player_id"], how="left")
+    S = S.drop([c for c in S.columns if c.startswith("_")])
     week_cols = ["season", "week", "team", "opponent_team", "home", "roof", "wind", "gameday"] + SUM_COLS
-    season_cols = ["season", "team", "position", "g", "pos_rank", "pos_n"] + SUM_COLS
+    season_cols = ["season", "team", "position", "g", "pos_rank", "pos_n"] + SUM_COLS + [f"pct_{c}" for c in PCT_STATS]
     out, index = {}, []
     for pid, wk in P.sort(["season", "week"]).group_by("player_id", maintain_order=True):
         pid = pid[0]
