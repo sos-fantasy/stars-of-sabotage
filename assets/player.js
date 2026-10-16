@@ -88,7 +88,7 @@ function render() {
   ];
   $("#p-tiles").innerHTML = tiles.map(([k, v]) => `<div class="tile"><p class="k">${k}</p><p class="v">${v}</p></div>`).join("");
 
-  // tale of the tape rows
+  // accomplishments rows
   const keys = [...(BY_POS[pos] || [])];
   for (const k of Object.keys(STAT)) if (!keys.includes(k) && sum(wk, STAT[k].n) > 0) keys.push(k);
   const qualified = srow && srow.pct_sabotage_pts !== null && srow.pct_sabotage_pts !== undefined;
