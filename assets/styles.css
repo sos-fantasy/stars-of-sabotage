@@ -182,3 +182,28 @@ td.loading { color: var(--muted); padding: 24px; }
   th, td { padding: 7px 8px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* Super Stars */
+.rec-group h2 { margin-top: 44px; padding-top: 14px; border-top: 2px solid var(--line-2); }
+.rec-row { margin: 22px 0 8px; }
+.rec-stat { margin: 0 0 10px; }
+.rec-stat small { font: 400 11px/1 var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: none; margin-left: 8px; }
+.rec-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.story.rec { display: flex; flex-direction: column; gap: 8px; }
+.story.rec p { margin: 0; }
+.rec .big { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.rec .big .num { font: 400 52px/1 var(--display); color: var(--yellow); }
+.rec .big .unit { font: 400 20px/1 var(--display); text-transform: uppercase; color: var(--ink); }
+.rec .worth { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line-2); padding: 3px 7px; margin-left: auto; }
+.rec .holder { font-weight: 700; }
+.rec .holder a { color: var(--ink); text-decoration-color: var(--rust); }
+.rec .holder a:hover { color: var(--yellow); }
+.rec .tm { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 2px; }
+.rec .when { color: var(--muted); font-weight: 400; font-size: 12px; }
+.rec .tied { font-size: 12px; color: var(--muted); }
+.rec .tied a { color: var(--ink); }
+.rec .note { font-size: 11px; color: var(--dim); border-top: 1px dashed var(--line-2); padding-top: 8px; }
+@media (max-width: 720px) {
+  .rec-cards { grid-template-columns: 1fr; }
+  .rec .big .num { font-size: 44px; }
+}
