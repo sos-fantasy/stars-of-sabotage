@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Player | Stars of Sabotage</title>
+<meta name="description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta name="theme-color" content="#15140f">
+<meta property="og:title" content="Player | Stars of Sabotage">
+<meta property="og:description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta property="og:image" content="assets/og-image.jpg">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css?v=ca9ade6ccf">
+</head>
+<body class="page-player" data-dv="46333f6a7592b072">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <a class="brand" href="./" aria-label="Stars of Sabotage home">
+    <picture><source srcset="assets/whoopsie-sm.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="" width="44" height="49"></picture>
+    <span class="wordmark">Stars of <em>Sabotage</em></span>
+  </a>
+  <nav aria-label="Main"><a href="./">Leaderboard</a><a href="defenses.html">Defenses</a><a href="super-stars.html">Super Stars</a><a href="method.html">Scoring</a></nav>
+  <div class="hsearch" data-search role="search">
+    <label class="sr-only" for="q-head">Search players and teams</label>
+    <input id="q-head" type="search" placeholder="Search players, teams" autocomplete="off" spellcheck="false"
+      role="combobox" aria-expanded="false" aria-controls="q-head-list" aria-autocomplete="list">
+    <ul id="q-head-list" role="listbox" class="results" hidden></ul>
+  </div>
+</header>
+<main id="main">
+
+<section class="phero">
+  <div>
+    <p class="eyebrow">Player</p>
+    <h1 id="p-name">Loading&hellip;</h1>
+    <p class="pmeta" id="p-meta"></p>
+  </div>
+  <div class="ctl">
+    <label for="p-season">Season</label>
+    <select id="p-season"></select>
+  </div>
+</section>
+<div id="p-body">
+  <div class="next-box" id="p-next" hidden></div>
+  <section class="tiles" id="p-tiles" aria-label="Summary"></section>
+  <section class="tape" aria-labelledby="tape-h">
+    <h2 id="tape-h">Tale of the tape</h2>
+    <p class="hint" id="p-tape-note"></p>
+    <div class="tape-head"><span>Stat</span><span class="r">Count</span><span class="r">Sabotage</span><span class="ph">Position percentile</span></div>
+    <div id="p-tape"></div>
+  </section>
+  <section aria-labelledby="p-chart-title">
+    <h2 id="p-chart-title">By week</h2>
+    <div class="chart-box" id="p-chart"></div>
+  </section>
+  <section aria-labelledby="p-log-title">
+    <h2 id="p-log-title">Game log</h2>
+    <div id="p-log"></div>
+  </section>
+  <section aria-labelledby="splits-h">
+    <h2 id="splits-h">Splits</h2>
+    <div id="p-splits"></div>
+  </section>
+</div>
+
+</main>
+<footer class="site-foot">
+  <p id="foot-status" class="foot-status"></p>
+  <p>Data: <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Scores are computed by Stars of Sabotage and are not official.</p>
+  <p>Not affiliated with or endorsed by the NFL, any NFL team, Yahoo, ESPN, CBS Sports, or Sleeper.</p>
+</footer>
+<script type="module" src="assets/common.js?v=e89b39acdc"></script>
+<script type="module" src="assets/player.js?v=2f40e18b0b"></script>
+</body>
+</html>
