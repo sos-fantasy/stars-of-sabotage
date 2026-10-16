@@ -461,13 +461,13 @@ Changes: meta and the season list are baked into index.html (two fewer round tri
 
 ## 25. Phase 2 core (October 16, 2026)
 
-Shipped to /preview on October 16. The compare page (Tale of the Tape between two players) comes next, at the owner's direction.
+Shipped to /preview on October 16. The player comparison page comes next and will also use the name Accomplishments (owner, October 16; replaces "Tale of the Tape" so the site does not echo NFL Savant), at the owner's direction.
 
 Search. A box in the header of every page except home, and a large box under the hero on home with position chips (All, QB, RB, WR, TE, K, DEF). Matching ignores accents, apostrophes, periods, hyphens, and Jr/Sr/II/III. "smith njig" finds Jaxon Smith-Njigba. Recent and high-scoring players rank first. Team names and codes find the defense. The index is `data/search.json` (4,050 players), loaded on first focus.
 
 Player page, `player.html?id=<gsis id>&season=<year|career>`:
 - Tiles for Sabotage points, per game, games, and position rank (seasons in Career view).
-- Tale of the tape: count, per game, and points for each scored stat, with a percentile bar. Percentiles compare the per-game rate against the same position that season, among players with 4 or more games; FB counts as RB. A zero rate shows 0. Under 4 games, no bars.
+- Accomplishments: count, per game, and points for each scored stat, with a percentile bar. Percentiles compare the per-game rate against the same position that season, among players with 4 or more games; FB counts as RB. A zero rate shows 0. Under 4 games, no bars.
 - Weekly stacked chart: passing misfires (incompletions, sacks), turnovers (fumbles, fumbles lost, INT, pick six), touches (carries, catches), missed kicks, with a 3-game average line. Career view charts each season.
 - Game log, splits (home/away, indoors/outdoors, wind under 10, 10 to 19, 20+ mph from nflverse schedules), and the next scheduled game.
 

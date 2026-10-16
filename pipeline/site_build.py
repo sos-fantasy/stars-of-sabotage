@@ -194,7 +194,7 @@ PLAYER_BODY = """
   <div class="next-box" id="p-next" hidden></div>
   <section class="tiles" id="p-tiles" aria-label="Summary"></section>
   <section class="tape" aria-labelledby="tape-h">
-    <h2 id="tape-h">Tale of the tape</h2>
+    <h2 id="tape-h">Accomplishments</h2>
     <p class="hint" id="p-tape-note"></p>
     <div class="tape-head"><span>Stat</span><span class="r">Count</span><span class="r">Sabotage</span><span class="ph">Position percentile</span></div>
     <div id="p-tape"></div>
