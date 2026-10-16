@@ -1,6 +1,7 @@
 // Shared: load meta.json and fill the footer status line on every page.
 export async function loadMeta() {
-  const r = await fetch("data/meta.json", { cache: "no-cache" });
+  // Minute-stamped so neither the browser nor a CDN can hold an old copy.
+  const r = await fetch(`data/meta.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-cache" });
   if (!r.ok) throw new Error("meta " + r.status);
   return r.json();
 }
