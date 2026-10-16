@@ -458,3 +458,23 @@ Measured in Chromium with Lighthouse's mobile preset (150 ms round trip, 1.6 Mbp
 | Super Stars | 0.3 s | 0.3 s |
 
 Changes: meta and the season list are baked into index.html (two fewer round trips); the current season's data files and the foot.js module are preloaded; the Career view reads precomputed `player-careers.json` / `defense-careers.json` (107 KB gzip) instead of all 18,000 player-seasons (400 KB); totals are recomputed only when the season or week range changes; the table draws 300 rows with a "Show more" button; phones get a 240 px hero image (19 KB instead of 58 KB). Single seasons remains the slowest view; slimming that file is an option if it matters.
+
+## 25. Phase 2 core (October 16, 2026)
+
+Shipped to /preview on October 16. The compare page (Tale of the Tape between two players) comes next, at the owner's direction.
+
+Search. A box in the header of every page except home, and a large box under the hero on home with position chips (All, QB, RB, WR, TE, K, DEF). Matching ignores accents, apostrophes, periods, hyphens, and Jr/Sr/II/III. "smith njig" finds Jaxon Smith-Njigba. Recent and high-scoring players rank first. Team names and codes find the defense. The index is `data/search.json` (4,050 players), loaded on first focus.
+
+Player page, `player.html?id=<gsis id>&season=<year|career>`:
+- Tiles for Sabotage points, per game, games, and position rank (seasons in Career view).
+- Tale of the tape: count, per game, and points for each scored stat, with a percentile bar. Percentiles compare the per-game rate against the same position that season, among players with 4 or more games; FB counts as RB. A zero rate shows 0. Under 4 games, no bars.
+- Weekly stacked chart: passing misfires (incompletions, sacks), turnovers (fumbles, fumbles lost, INT, pick six), touches (carries, catches), missed kicks, with a 3-game average line. Career view charts each season.
+- Game log, splits (home/away, indoors/outdoors, wind under 10, 10 to 19, 20+ mph from nflverse schedules), and the next scheduled game.
+
+Defenses page, `defenses.html?season=<year>&team=<code>`: the five most generous defenses, a sortable season table with points-allowed bucket counts, and a week grid showing points allowed, shaded by Sabotage points earned.
+
+Leaderboard player names link to player pages; DEF rows link to the Defenses page.
+
+Hand check (Jameis Winston, 2026 Week 5 at WAS): 21 incompletions x 2 = 42, 2 sacks x 5 = 10, 1 fumble 7 + lost 10 = 17, 5 carries = 5. Total 74, matching the chart and game log.
+
+New data files: `games-YYYY.json` (schedule context per season), `players/<id>.json` (one per player), `search.json`.
