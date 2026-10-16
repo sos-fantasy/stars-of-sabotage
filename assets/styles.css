@@ -178,6 +178,7 @@ td.loading { color: var(--muted); padding: 24px; }
   .table-wrap { max-height: 72vh; }
   .wreck-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 16px; gap: 10px; margin: 0 -16px; padding: 0 16px 8px; }
   .story { flex: 0 0 82%; scroll-snap-align: start; }
+  .wreck-grid .story.alert { flex-basis: 88%; }
   .wreck h2::after { content: " \2192"; color: var(--dim); font-size: 18px; }
   th, td { padding: 7px 8px; }
 }
@@ -207,3 +208,16 @@ td.loading { color: var(--muted); padding: 24px; }
   .rec-cards { grid-template-columns: 1fr; }
   .rec .big .num { font-size: 44px; }
 }
+
+/* Record alerts */
+.wreck-grid .story.alert { grid-column: span 2; }
+.story.alert { border: 1px solid var(--yellow); border-top: 4px solid var(--yellow); background: linear-gradient(180deg, rgba(242,183,5,.08), var(--bg-2) 60%); }
+.story.alert.official { border-color: var(--line-2); border-top-color: var(--yellow); background: var(--bg-2); }
+.story.alert .label { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.story.alert .label .scope { color: var(--muted); letter-spacing: .1em; }
+.story.alert .rec-line { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+.story.alert .rec-line .num { font: 400 34px/1 var(--display); color: var(--yellow); margin-right: 4px; }
+.story.alert .rec-line .was { margin-left: 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+.story.alert .more { margin: 10px 0 0; font-size: 12px; }
+.rec .alert-note { font-size: 13px; color: var(--ink); border-left: 3px solid var(--yellow); padding-left: 10px; }
+.rec .label .badge { margin-left: 8px; }

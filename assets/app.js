@@ -141,7 +141,7 @@ function renderWeekline() {
   $("#weekline").innerHTML = parts.join("");
   const past = isAll() || state.season !== meta.season;
   $("#histnote").hidden = !past;
-  $("#wreck").hidden = past || !(meta.highlights?.stories?.length);
+  $("#wreck").hidden = past || !((meta.highlights?.stories?.length || 0) + (meta.highlights?.records?.length || 0));
 }
 function rangeText(ws) {
   ws = [...ws].sort((a, b) => a - b);
@@ -151,14 +151,20 @@ function rangeText(ws) {
 
 function renderStories(meta) {
   const h = meta.highlights;
-  if (!h || !h.stories || !h.stories.length) return;
-  $("#wreck-week").textContent = `Week ${h.week}`;
+  const alerts = h?.records || [];
+  if (!h || (!(h.stories || []).length && !alerts.length)) return;
+  $("#wreck-week").textContent = h.week ? `Week ${h.week}` : "This week's";
   if (h.status && h.status !== "final") $("#wreck-week").textContent += ` (${STATUS_TEXT[h.status]})`;
-  $("#wreck-grid").innerHTML = h.stories
-    .map((s) => `<article class="story"><p class="label">${esc(s.label)}</p>
+  const recCards = alerts.map((a) => `<article class="story alert${a.official ? " official" : ""}">
+      <p class="label">${esc(a.title)}<span class="scope">${a.scope === "game" ? "Single game" : "Single season"}, Week ${a.week}</span></p>
+      <h3 class="who">${esc(a.who)}${a.team && !a.who.endsWith("defense") ? `<small>${esc(a.team)}</small>` : ""}</h3>
+      <p class="rec-line"><span class="num">${a.value.toLocaleString()}</span> ${esc(a.unit)} <span class="was">old mark ${a.previous.toLocaleString()}</span></p>
+      <p class="text">${esc(a.text)}</p>
+      <p class="more"><a href="super-stars.html">See every record</a></p></article>`);
+  const storyCards = (h.stories || []).map((s) => `<article class="story"><p class="label">${esc(s.label)}</p>
       <h3 class="who">${esc(s.who)}${s.team && !s.who.endsWith("defense") ? `<small>${esc(s.team)}</small>` : ""}</h3>
-      <p class="text">${esc(s.text)}</p></article>`)
-    .join("");
+      <p class="text">${esc(s.text)}</p></article>`);
+  $("#wreck-grid").innerHTML = [...recCards, ...storyCards].join("");
 }
 
 // ---------- controls ----------
