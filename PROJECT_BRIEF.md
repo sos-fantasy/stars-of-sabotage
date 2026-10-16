@@ -408,3 +408,15 @@ Story timing: awards cover the latest week once at least half its games are fina
 Live at starsofsabotage.com/preview/ (noindex while in preview). Hostinger deploys the `deploy` branch into `public_html/preview` on each push. GitHub Actions workflow `.github/workflows/update.yml` runs hourly at :07 UTC; `pipeline/schedule.py` decides in Eastern time whether to work (daily 6 and 10 AM; game days 4, 7, 10 PM; overnight 1 and 4 AM after game days; Wednesday 10 PM and Thursday 4 AM for corrections). It publishes only when output changed, and at least once a day via the `checked_on` date, which also keeps the public repo active. A week is final at 10 AM ET on the first Thursday after its last game.
 
 To move off /preview: point the Hostinger deployment at `public_html`, and set `SOS_NOINDEX` to "0" in the workflow.
+
+## 20. History backfill (October 16, 2026)
+
+Seasons 1999 to 2026 are scored (28 seasons; nflverse play-by-play starts in 1999). Owner request. Spot-checked against the record book: Favre 2005, 29 INT; Winston 2019, 30 INT and 7 pick sixes; David Carr 2002, 76 sacks; Brady, 23 seasons and 335 games. Worst Sabotage season on record: Winston 2019, 1,367 points.
+
+Data files per season: `data/scores-YYYY.json`, `data/defense-YYYY.json`. Index: `data/seasons.json`. Season totals for the All seasons view: `data/player-seasons.json`, `data/defense-seasons.json`. The hourly run rebuilds only the current season and carries the rest forward from the deploy branch; any season missing there is rebuilt automatically. A manual "backfill" run of the workflow rebuilds everything, which is required after any scoring rule change.
+
+Leaderboard: season selector (each year plus All seasons), Full season button for single seasons, and in All seasons a Career or Single seasons row mode. The table shows Fumble (7) and Fumble lost (10) as separate columns, and Interception (10) and Pick six bonus (21) as separate columns.
+
+Known data notes: nflverse uses current team codes for old seasons (2012 Chargers show as LAC, 2005 Raiders as LV). One 1999 stat row (Steve Bono, week 9) had no team; the pipeline fills missing teams from play-by-play. Seasons before 2021 had 16 games, so per-game numbers compare better across eras.
+
+Next idea from the owner: a "Super Stars" hall-of-shame page with all-time worst by each stat (receptions and rushing attempts excluded, since they are not bad plays).

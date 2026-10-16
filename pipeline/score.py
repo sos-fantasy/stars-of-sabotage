@@ -142,16 +142,26 @@ def score_players(stats: pl.DataFrame, pbp: pl.DataFrame, cfg: dict) -> pl.DataF
         "pts_sacks": pl.col("n_sacks") * o["sack_taken"],
         "pts_carries": pl.col("n_carries") * o["rush_attempt"],
         "pts_receptions": pl.col("n_receptions") * o["reception"],
-        "pts_fumbles": fum_scored * o["fumble"] + pl.col("n_fumbles_lost") * o["fumble_lost"],
-        "pts_ints": int_scored * o["interception_thrown"] + pl.col("n_pick_sixes") * o["pick_six_thrown"],
+        # Fumble and lost-fumble points are separate components so the site can show each.
+        "pts_fumble": fum_scored * o["fumble"],
+        "pts_fumble_lost": pl.col("n_fumbles_lost") * o["fumble_lost"],
+        # Same for interceptions and the pick-six bonus.
+        "pts_int": int_scored * o["interception_thrown"],
+        "pts_pick_six": pl.col("n_pick_sixes") * o["pick_six_thrown"],
         "pts_kicking": sum(pl.col(f"n_fgm_{b}") * k["fg_missed"][b] for b in FG_BUCKETS)
         + pl.col("n_pat_missed") * k["pat_missed"],
     }
     df = df.with_columns(**comps)
-    df = df.with_columns(pl.sum_horizontal(list(comps)).alias("sabotage_pts"), pl.lit(cfg["version"]).alias("scoring_version"))
+    df = df.with_columns(
+        pl.sum_horizontal(list(comps)).alias("sabotage_pts"),
+        # Subtotals for stories and summaries; not added again into the total.
+        (pl.col("pts_fumble") + pl.col("pts_fumble_lost")).alias("pts_fumbles"),
+        (pl.col("pts_int") + pl.col("pts_pick_six")).alias("pts_ints"),
+        pl.lit(cfg["version"]).alias("scoring_version"),
+    )
     keep = ["player_id", "player_display_name", "position", "season", "week", "game_id", "team", "opponent_team"]
     ncols = [c for c in df.columns if c.startswith("n_")]
-    return df.select(keep + ncols + list(comps) + ["sabotage_pts", "scoring_version"])
+    return df.select(keep + ncols + list(comps) + ["pts_fumbles", "pts_ints", "sabotage_pts", "scoring_version"])
 
 
 def non_offensive_points(pbp: pl.DataFrame) -> pl.DataFrame:

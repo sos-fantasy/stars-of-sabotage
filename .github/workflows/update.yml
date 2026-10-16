@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: "7 * * * *"
   workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Rebuild every season from 1999 (use after a scoring rule change)"
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ["pipeline/**", "site/**", "config/**", "requirements.txt", ".github/workflows/update.yml"]
@@ -21,7 +26,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -46,7 +51,8 @@ jobs:
         env:
           SOS_NOINDEX: "1"   # set to "0" when the site moves out of /preview
           FORCE: ${{ github.event_name != 'schedule' && '--force' || '' }}
-        run: python pipeline/run.py --out dist --prev deploy $FORCE
+          BACKFILL: ${{ inputs.backfill && '--backfill' || '' }}
+        run: python pipeline/run.py --out dist --prev deploy $FORCE $BACKFILL
 
       - name: Publish to the deploy branch
         if: steps.build.outputs.ran == 'true'

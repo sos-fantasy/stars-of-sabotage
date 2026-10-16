@@ -72,7 +72,7 @@ BOARD_BODY = """
   <div>
     <p class="eyebrow">A fantasy football league for everything that goes <span>wrong</span></p>
     <h1>The <span class="hl">Leaderboard</span></h1>
-    <p class="lede">Every NFL player and defense, ranked by Sabotage points. <a href="method.html">How scoring works</a>.</p>
+    <p class="lede">Every NFL player and defense since 1999, ranked by Sabotage points. <a href="method.html">How scoring works</a>.</p>
     <p class="weekline" id="weekline" aria-live="polite"></p>
   </div>
 </section>
@@ -86,9 +86,21 @@ BOARD_BODY = """
   <h2 id="board-title" class="sr-only">Player and defense rankings</h2>
   <form class="controls" id="controls" onsubmit="return false">
     <div class="ctl">
-      <label for="f-from">Weeks</label>
-      <div class="pair"><select id="f-from"></select><span>to</span><select id="f-to"></select></div>
+      <label for="f-season">Season</label>
+      <select id="f-season"></select>
     </div>
+    <div class="ctl" id="weeks-ctl">
+      <label for="f-from">Weeks</label>
+      <div class="pair"><select id="f-from"></select><span>to</span><select id="f-to"></select>
+        <button type="button" id="b-full" class="toggle" aria-pressed="true">Full season</button></div>
+    </div>
+    <fieldset class="ctl seg" id="rows-ctl" hidden>
+      <legend>Rows</legend>
+      <div class="segbtns">
+        <button type="button" data-rows="career" aria-pressed="true">Career</button>
+        <button type="button" data-rows="season" aria-pressed="false">Single seasons</button>
+      </div>
+    </fieldset>
     <fieldset class="ctl chips" id="f-pos">
       <legend>Position</legend>
     </fieldset>
@@ -123,6 +135,7 @@ BOARD_BODY = """
       <button type="button" id="b-csv" class="ghost">CSV</button>
     </div>
   </form>
+  <p class="histnote" id="histnote" hidden>Past seasons are scored under the current Sabotage rules (v{version}) using Yahoo's points-allowed rule. Team codes follow nflverse, which uses today's abbreviations, so the 2012 Chargers show as LAC.</p>
   <p class="count" id="count" aria-live="polite"></p>
   <div class="table-wrap" id="table-wrap" tabindex="0" aria-label="Leaderboard table, scrolls sideways on small screens">
     <table id="board">
@@ -218,6 +231,7 @@ METHOD_BODY = """
 
 <h2>Rule versions</h2>
 <p>Every score on this site records the rule version that produced it. If the league changes its rules, past seasons are rescored under a new version, and the old version stays on record.</p>
+<p>The archive goes back to 1999, the first season nflverse has play-by-play for. Every past season is scored under the current rules, including Yahoo's points-allowed rule, so a 2005 score means what it would mean today. Seasons before 2021 had 16 games, so compare per-game numbers across eras.</p>
 </article>
 """
 
@@ -226,8 +240,10 @@ def build(out: Path, noindex: bool = True) -> None:
     out.mkdir(parents=True, exist_ok=True)
     shutil.copytree(SITE / "assets", out / "assets", dirs_exist_ok=True)
     shutil.copy2(SITE / "favicon.ico", out / "favicon.ico")
+    version = escape(load_config()["version"])
     (out / "index.html").write_text(layout(
-        "Stars of Sabotage | Sabotage fantasy football leaderboard", BOARD_BODY, page="board", noindex=noindex,
+        "Stars of Sabotage | Sabotage fantasy football leaderboard", BOARD_BODY.replace("{version}", version),
+        page="board", noindex=noindex,
         scripts='<script type="module" src="assets/app.js"></script>'))
     (out / "method.html").write_text(layout(
         "How Sabotage scoring works | Stars of Sabotage", method_body(), page="method", noindex=noindex,

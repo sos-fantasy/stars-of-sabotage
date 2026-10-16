@@ -206,3 +206,23 @@ def test_defense_yahoo_points_allowed():
     assert (aaa_r["points_allowed"], aaa_r["sabotage_pts"]) == (30, 35)
     # AAA scored 0 -> BBB defense gets 0 (owner ruling: a shutout is not sabotage)
     assert y.filter(pl.col("team") == "BBB").row(0, named=True)["sabotage_pts"] == 0
+
+
+def test_split_components_qb():
+    # Same QB as test_qb_league_rules (total 104), components shown separately:
+    # fumble 2*7 = 14, fumble lost 1*10 = 10, interception 2*10 = 20, pick-six bonus 1*21 = 21
+    out = score.score_players(pl.DataFrame([QB]), QB_PBP, score.load_config()).row(0, named=True)
+    assert (out["pts_fumble"], out["pts_fumble_lost"], out["pts_int"], out["pts_pick_six"]) == (14, 10, 20, 21)
+    assert (out["pts_fumbles"], out["pts_ints"]) == (24, 41)
+    parts = ["pts_incomplete", "pts_sacks", "pts_carries", "pts_receptions", "pts_fumble",
+             "pts_fumble_lost", "pts_int", "pts_pick_six", "pts_kicking"]
+    assert sum(out[p] for p in parts) == out["sabotage_pts"] == 104
+
+
+def test_split_components_not_stacked():
+    # Unstacked: only the 1 non-lost fumble earns the 7 (7), the lost one earns 10;
+    # 1 plain interception earns 10, the pick six earns 21 -> 7 + 10 + 10 + 21
+    out = score.score_players(pl.DataFrame([QB]), QB_PBP,
+                              score.load_config(stack_fumble_lost=False, stack_pick_six=False)).row(0, named=True)
+    assert (out["pts_fumble"], out["pts_fumble_lost"], out["pts_int"], out["pts_pick_six"]) == (7, 10, 10, 21)
+    assert out["sabotage_pts"] == 87
