@@ -9,7 +9,7 @@ October 15, 2026. Data pulled with nflreadpy 0.1.5. Covers 2026 weeks 1 to 5 (79
 | Real nflverse schemas, fix 4.1 | Done. All expected columns exist. Brief section 4.1 updated |
 | Scoring engine | Built. `config/scoring.yml`, `pipeline/score.py`, 31 hand-computed tests passing |
 | Settle 3.3 against the league | Done. All 7 settled; points allowed uses Yahoo's rule |
-| NFL.com and nflverse terms | Read. Summary below. The open risk stays open |
+| NFL.com and nflverse terms | Read. Owner chose option A on Oct 16, 2026 (free, ad-free, attributed). Revisit before any revenue |
 | Video channel, title pattern, embed test | Partly done. See below. NFL Rush titles not confirmed |
 | GitHub scheduled-workflow rule | Confirmed: public repos, 60 days without activity |
 | Deploy path (5.2) | Waiting on owner |
@@ -62,7 +62,7 @@ Owner check: open youtube.com/@NFLRush/videos and tell me whether the worst-play
 3. Which channel carries the worst-plays video you want.
 4. Deploy path A, B, or C (brief 5.2). I recommend A.
 5. Public or private GitHub repo. Private avoids the 60-day rule. Before choosing private, I will check the current free Actions minutes for private repos against an hourly schedule.
-6. Licensing approach A, B, or C above.
+6. Resolved: licensing option A (Oct 16, 2026).
 7. NFL Savant screenshots.
 
 ## Sources

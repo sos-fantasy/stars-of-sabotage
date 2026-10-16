@@ -436,3 +436,11 @@ Owner request: when a current-season game or season total passes or ties an all-
 How it works (`pipeline/records.py`, `_alert`): each run compares the current season against the best mark from all earlier seasons, for every stat and both scopes. Passing it is "broken", matching it is "tied". For season records, the alert week is the week the running total first passed (or reached) the old mark. The alert is "Potential record broken/tied" until that week is final (10 AM ET on the first Thursday after the week's last game, the same rule as the leaderboard), then "Record broken/tied". Pending text names the exact deadline, e.g. "If the numbers stand until 10 AM Eastern on Thursday, October 22, it goes in the book."
 
 Where it shows: the home-page Wreckage Report puts alert cards first (double width) while pending, plus any record set in the week the report covers; the Super Stars card shows a badge, and while pending shows the alert text in place of the regular story. Tests: `tests/test_records.py` (broken, tied, official, season running total, no false alert).
+
+## 23. Licensing decision (owner, October 16, 2026)
+
+Option A: launch free and ad-free on nflverse data with CC BY 4.0 attribution, the non-affiliation disclaimer, no logos or headshots, and no direct access to NFL.com. Reason: the site is in the "build awareness of the format" stage, so it stays non-commercial.
+
+Revisit trigger: if traffic grows and ads, subscriptions, or any revenue are considered, do option B (sports-media attorney review) first, and switch the planned weather source off Open-Meteo's free non-commercial tier. Option C (licensed feed such as SportsDataIO) stays on the table if the attorney advises it.
+
+Background research: NBA v. Motorola, 105 F.3d 841 (2d Cir. 1997), game facts are not copyrightable; C.B.C. Distribution v. MLB Advanced Media (8th Cir. 2007), First Amendment outweighed publicity rights for fantasy use of player names and stats; NFL.com Terms (May 16, 2024) limit use of NFL.com to non-commercial purposes and bar systematic retrieval. Not legal advice.
