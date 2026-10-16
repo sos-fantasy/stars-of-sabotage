@@ -158,6 +158,9 @@ def main(argv=None) -> int:
     ps, ds = export.season_totals(data_out, [s["season"] for s in seasons])
     _write(data_out / "player-seasons.json", ps)
     _write(data_out / "defense-seasons.json", ds)
+    pc, dc = export.career_totals(ps, ds)
+    _write(data_out / "player-careers.json", pc)
+    _write(data_out / "defense-careers.json", dc)
 
     weeks = current["weeks"]
     played = [w for w in weeks if w["status"] in ("final", "provisional", "in_progress")]
@@ -195,7 +198,8 @@ def main(argv=None) -> int:
                                      if not a["official"] or a["week"] == story_week]
     _write(data_out / "meta.json", meta)
     _write(data_out / "records.json", recs)
-    site_build.build(out, noindex=os.environ.get("SOS_NOINDEX", "1") == "1", records=recs)
+    site_build.build(out, noindex=os.environ.get("SOS_NOINDEX", "1") == "1", records=recs,
+                     boot={"meta": meta, "seasons": seasons})
 
     print(f"[done] seasons {min(index)}-{max(index)} ({len(index)}), rebuilt {todo[0]}"
           f"{'-' + str(todo[-1]) if len(todo) > 1 else ''}, latest week {latest}, "

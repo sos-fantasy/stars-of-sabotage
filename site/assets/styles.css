@@ -221,3 +221,5 @@ td.loading { color: var(--muted); padding: 24px; }
 .story.alert .more { margin: 10px 0 0; font-size: 12px; }
 .rec .alert-note { font-size: 13px; color: var(--ink); border-left: 3px solid var(--yellow); padding-left: 10px; }
 .rec .label .badge { margin-left: 8px; }
+.more-row { margin: 10px 0 0; }
+.more-row button { width: 100%; }

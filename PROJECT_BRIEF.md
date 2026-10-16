@@ -444,3 +444,17 @@ Option A: launch free and ad-free on nflverse data with CC BY 4.0 attribution, t
 Revisit trigger: if traffic grows and ads, subscriptions, or any revenue are considered, do option B (sports-media attorney review) first, and switch the planned weather source off Open-Meteo's free non-commercial tier. Option C (licensed feed such as SportsDataIO) stays on the table if the attorney advises it.
 
 Background research: NBA v. Motorola, 105 F.3d 841 (2d Cir. 1997), game facts are not copyrightable; C.B.C. Distribution v. MLB Advanced Media (8th Cir. 2007), First Amendment outweighed publicity rights for fantasy use of player names and stats; NFL.com Terms (May 16, 2024) limit use of NFL.com to non-commercial purposes and bar systematic retrieval. Not legal advice.
+
+## 24. Phone speed (October 16, 2026)
+
+Measured in Chromium with Lighthouse's mobile preset (150 ms round trip, 1.6 Mbps down, 750 Kbps up, 4x CPU slowdown), gzip on, time until leaderboard rows appear:
+
+| View | Before | After |
+|---|---|---|
+| Current season | 3.5 s | 2.1 s |
+| A past season (2019) | 3.9 s | 2.5 s |
+| All seasons, Career | 8.5 s | 2.5 s |
+| All seasons, Single seasons | 8.4 s | 4.9 s |
+| Super Stars | 0.3 s | 0.3 s |
+
+Changes: meta and the season list are baked into index.html (two fewer round trips); the current season's data files and the foot.js module are preloaded; the Career view reads precomputed `player-careers.json` / `defense-careers.json` (107 KB gzip) instead of all 18,000 player-seasons (400 KB); totals are recomputed only when the season or week range changes; the table draws 300 rows with a "Show more" button; phones get a 240 px hero image (19 KB instead of 58 KB). Single seasons remains the slowest view; slimming that file is an option if it matters.

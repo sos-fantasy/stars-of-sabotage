@@ -69,7 +69,7 @@ def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = ""
 
 BOARD_BODY = """
 <section class="hero">
-  <picture class="hero-art"><source srcset="assets/whoopsie.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267"></picture>
+  <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
   <div>
     <p class="eyebrow">A fantasy football league for everything that goes <span>wrong</span></p>
     <h1>The <span class="hl">Leaderboard</span></h1>
@@ -144,6 +144,7 @@ BOARD_BODY = """
       <tbody><tr><td class="loading">Loading the damage report&hellip;</td></tr></tbody>
     </table>
   </div>
+  <p class="more-row"><button type="button" id="b-more" class="ghost" hidden>Show more</button></p>
   <p class="hint">Click a column to sort. Click again to flip it, a third time to reset. Shift-click adds a second sort.</p>
 </section>
 """
@@ -259,7 +260,7 @@ def supers_body(rec: dict) -> str:
     first, last = rec["first_season"], rec["last_season"]
     parts = [f"""
 <section class="hero">
-  <picture class="hero-art"><source srcset="assets/whoopsie.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267"></picture>
+  <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
   <div>
     <p class="eyebrow">Hall of shame, {first} to {last}</p>
     <h1>Super <span class="hl">Stars</span></h1>
@@ -332,7 +333,20 @@ HTACCESS = """# Written by pipeline/site_build.py
 """
 
 
-def build(out: Path, noindex: bool = True, records: dict | None = None) -> None:
+def _boot_tags(boot: dict | None) -> tuple[str, str]:
+    """Inline meta + season list, and preload the current season's data so the
+    browser fetches it in parallel with the script instead of after it."""
+    if not boot:
+        return "", ""
+    import json
+    m = boot["meta"]
+    payload = json.dumps(boot, separators=(",", ":")).replace("</", "<\\/")
+    pre = "".join(f'<link rel="preload" href="data/{n}-{m["season"]}.json?v={m["data_hash"]}" as="fetch" crossorigin>\n'
+                  for n in ("scores", "defense"))
+    return pre, f'<script id="boot" type="application/json">{payload}</script>\n'
+
+
+def build(out: Path, noindex: bool = True, records: dict | None = None, boot: dict | None = None) -> None:
     out.mkdir(parents=True, exist_ok=True)
     shutil.copytree(SITE / "assets", out / "assets", dirs_exist_ok=True)
     shutil.copy2(SITE / "favicon.ico", out / "favicon.ico")
@@ -345,10 +359,18 @@ def build(out: Path, noindex: bool = True, records: dict | None = None) -> None:
     v = {"css": _hash(a / "styles.css"), "app": _hash(a / "app.js"), "foot": foot_v}
     tag = lambda html: html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
     version = escape(load_config()["version"])
+    if boot is None:
+        import json
+        mp, sp = out / "data" / "meta.json", out / "data" / "seasons.json"
+        if mp.exists() and sp.exists():
+            boot = {"meta": json.loads(mp.read_text()), "seasons": json.loads(sp.read_text())}
+    pre, boot_tag = _boot_tags(boot)
     (out / "index.html").write_text(tag(layout(
         "Stars of Sabotage | Sabotage fantasy football leaderboard", BOARD_BODY.replace("{version}", version),
         page="board", noindex=noindex,
-        scripts=f'<script type="module" src="assets/app.js?v={v["app"]}"></script>')))
+        scripts=boot_tag + f'<script type="module" src="assets/app.js?v={v["app"]}"></script>')).replace(
+        '<link rel="stylesheet"', pre + f'<link rel="modulepreload" href="assets/foot.js?v={v["foot"]}">\n'
+        + '<link rel="stylesheet"', 1))
     if records is None:
         import json
         rp = out / "data" / "records.json"

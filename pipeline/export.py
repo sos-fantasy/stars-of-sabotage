@@ -78,6 +78,21 @@ def season_totals(data_dir, seasons: list[int]) -> tuple[dict, dict]:
     return compact(P, pcols), compact(D, dcols)
 
 
+def career_totals(player_seasons: dict, defense_seasons: dict) -> tuple[dict, dict]:
+    """Career sums per player and per defense, so the Career view skips the 18,000-row file."""
+    P = pl.DataFrame(player_seasons["rows"], schema=player_seasons["cols"], orient="row").sort("season")
+    sums = [c for c in SUM_COLS]
+    C = (P.group_by("player_id", maintain_order=True)
+         .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
+              pl.len().alias("yrs"), pl.col("g").sum(), *[pl.col(c).sum() for c in sums])
+         .sort("sabotage_pts", descending=True))
+    D = pl.DataFrame(defense_seasons["rows"], schema=defense_seasons["cols"], orient="row")
+    DC = (D.group_by("team").agg(pl.len().alias("yrs"), pl.col("g").sum(), pl.col("points_allowed").sum(),
+                                 pl.col("sabotage_pts").sum()).sort("sabotage_pts", descending=True))
+    pcols = ["player_id", "player_display_name", "position", "team", "yrs", "g"] + sums
+    return compact(C, pcols), compact(DC, ["team", "yrs", "g", "points_allowed", "sabotage_pts"])
+
+
 def compact(df: pl.DataFrame, cols: list[str]) -> dict:
     return {"cols": cols, "rows": df.select(cols).rows()}
 

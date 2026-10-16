@@ -53,7 +53,7 @@ const PLAYER_ONLY = new Set([...PTS, ...CNT].map((c) => c.key).filter((k) => !DE
 // ---------- state ----------
 const DEFAULTS = { season: null, from: null, to: null, rows: "career", pos: "ALL", team: "", view: "total", cols: "pts", min: 0, q: "", sort: [] };
 const state = { ...DEFAULTS };
-const DATA = { meta: null, seasons: [], weekly: new Map(), allSeasons: null };
+const DATA = { meta: null, seasons: [], weekly: new Map(), careerRows: null, seasonRows: null };
 const isAll = () => state.season === "all";
 const seasonInfo = (s) => DATA.seasons.find((x) => x.season === s);
 
@@ -67,9 +67,12 @@ const getJSON = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + " "
 
 async function ensureData() {
   if (isAll()) {
-    if (!DATA.allSeasons) {
-      const [p, d] = await Promise.all([getJSON(`data/player-seasons.json?v=${dv()}`), getJSON(`data/defense-seasons.json?v=${dv()}`)]);
-      DATA.allSeasons = { players: toObjs(p), defense: toObjs(d) };
+    // Career view reads a small precomputed file; single-season rows need the full list.
+    const key = state.rows === "season" ? "seasonRows" : "careerRows";
+    if (!DATA[key]) {
+      const [pf, df] = state.rows === "season" ? ["player-seasons", "defense-seasons"] : ["player-careers", "defense-careers"];
+      const [p, d] = await Promise.all([getJSON(`data/${pf}.json?v=${dv()}`), getJSON(`data/${df}.json?v=${dv()}`)]);
+      DATA[key] = { players: toObjs(p), defense: toObjs(d) };
     }
     return;
   }
@@ -81,10 +84,12 @@ async function ensureData() {
 
 async function init() {
   try {
-    const meta = await loadMeta();
+    // The page ships with meta and the season list baked in, saving two round trips.
+    const boot = document.getElementById("boot");
+    const baked = boot ? JSON.parse(boot.textContent) : null;
+    const meta = baked?.meta || (await loadMeta());
     DATA.meta = meta;
-    const seasons = await getJSON(`data/seasons.json?v=${dv()}`);
-    DATA.seasons = seasons;
+    DATA.seasons = baked?.seasons || (await getJSON(`data/seasons.json?v=${dv()}`));
     DEFAULTS.season = meta.season;
   } catch (e) {
     return fail();
@@ -101,6 +106,7 @@ function fail() {
 }
 
 async function go(push = true) {
+  limit = PAGE;
   $("#board").setAttribute("aria-busy", "true");
   try { await ensureData(); } catch (e) { return fail(); }
   fixWeeks();
@@ -193,9 +199,10 @@ function setupControls() {
   box.onclick = (e) => { const b = e.target.closest("button"); if (b) { state.pos = b.dataset.pos; update(); } };
   document.querySelectorAll("[data-view]").forEach((b) => (b.onclick = () => { state.view = b.dataset.view; state.sort = []; update(); }));
   document.querySelectorAll("[data-cols]").forEach((b) => (b.onclick = () => { state.cols = b.dataset.cols; dropBadSorts(); update(); }));
-  document.querySelectorAll("[data-rows]").forEach((b) => (b.onclick = () => { state.rows = b.dataset.rows; dropBadSorts(); update(); }));
+  document.querySelectorAll("[data-rows]").forEach((b) => (b.onclick = () => { state.rows = b.dataset.rows; dropBadSorts(); go(false); }));
   $("#b-reset").onclick = () => { Object.assign(state, { ...DEFAULTS, sort: [] }); go(); };
   $("#b-csv").onclick = downloadCSV;
+  $("#b-more").onclick = () => { limit += PAGE; render(); };
 }
 function dropBadSorts() { state.sort = state.sort.filter((s) => colDefs().some((c) => c.key === s.key)); }
 
@@ -240,12 +247,12 @@ function syncControls() {
   document.querySelectorAll("[data-rows]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.rows === state.rows));
 }
 function teamList() {
-  const src = isAll() ? DATA.allSeasons : DATA.weekly.get(state.season);
+  const src = isAll() ? (state.rows === "season" ? DATA.seasonRows : DATA.careerRows) : DATA.weekly.get(state.season);
   if (!src) return [];
   return [...new Set([...src.players.map((r) => r.team), ...src.defense.map((r) => r.team)])].filter(Boolean).sort();
 }
 
-function update() { syncControls(); writeURL(false); render(); }
+function update() { limit = PAGE; syncControls(); writeURL(false); render(); }
 
 // ---------- URL state ----------
 function readURL() {
@@ -308,26 +315,37 @@ function addDef(a, r) {
 }
 const blankDef = (team, id) => ({ id, name: `${team} Defense`, pos: "DEF", team, g: 0, total: 0, pts_def: 0, points_allowed: 0, isDef: true });
 
+let aggKey = "", aggRows = [];
 function aggregate() {
+  // Filters and sorts don't change the totals, so only re-total when the data scope changes.
+  const key = isAll() ? `all|${state.rows}` : `${state.season}|${state.from}|${state.to}`;
+  if (key === aggKey) return aggRows.slice();
+  aggKey = key;
+  aggRows = computeAggregate();
+  return aggRows.slice();
+}
+function computeAggregate() {
   const out = new Map();
   if (isAll()) {
-    const { players, defense } = DATA.allSeasons;
     const bySeason = state.rows === "season";
+    const { players, defense } = bySeason ? DATA.seasonRows : DATA.careerRows;
     for (const r of players) {
       const id = bySeason ? `${r.player_id}|${r.season}` : r.player_id;
       let a = out.get(id);
       if (!a) { a = blankPlayer(r, id); a.seasons = new Set(); if (bySeason) a.season = r.season; out.set(id, a); }
-      addPlayer(a, r, r.season);
-      a.seasons.add(r.season);
+      addPlayer(a, r, r.season ?? 0);
+      if (r.season) a.seasons.add(r.season);
+      if (r.yrs) a.yrsFile = r.yrs;
     }
     for (const r of defense) {
       const id = bySeason ? `DEF-${r.team}|${r.season}` : `DEF-${r.team}`;
       let a = out.get(id);
       if (!a) { a = blankDef(r.team, id); a.seasons = new Set(); if (bySeason) a.season = r.season; out.set(id, a); }
       addDef(a, r);
-      a.seasons.add(r.season);
+      if (r.season) a.seasons.add(r.season);
+      if (r.yrs) a.yrsFile = r.yrs;
     }
-    for (const a of out.values()) a.yrs = a.seasons.size;
+    for (const a of out.values()) a.yrs = a.yrsFile ?? a.seasons.size;
   } else {
     const { players, defense } = DATA.weekly.get(state.season);
     const inRange = (r) => r.week >= state.from && r.week <= state.to;
@@ -421,13 +439,14 @@ function onSort(key, shift) {
 }
 
 // ---------- render ----------
-const MAX_ROWS = 1500;   // all-seasons career lists run past 5,000 players
+const PAGE = 300;   // rows drawn at a time; phones slow down past a few hundred
+let limit = PAGE;
 let lastRows = [];
 function render() {
   const defs = colDefs();
   const rows = sortRows(filtered(aggregate()));
   lastRows = rows;
-  const shown = rows.slice(0, MAX_ROWS);
+  const shown = rows.slice(0, limit);
   const active = state.sort.length ? state.sort : defaultSort();
 
   const groups = [];
@@ -462,7 +481,10 @@ function render() {
   let scope;
   if (isAll()) scope = state.rows === "season" ? "single seasons, all years" : "career totals, all seasons";
   else scope = isFullSeason() ? `${state.season} full season` : `${state.season}, ${state.from === state.to ? `week ${state.from}` : `weeks ${state.from} to ${state.to}`}`;
-  const capped = rows.length > MAX_ROWS ? ` Showing the top ${MAX_ROWS.toLocaleString()}; filter or download the CSV for the rest.` : "";
+  const capped = rows.length > shown.length ? ` Showing the top ${shown.length.toLocaleString()}.` : "";
+  const more = $("#b-more");
+  more.hidden = rows.length <= shown.length;
+  more.textContent = `Show ${Math.min(PAGE, rows.length - shown.length).toLocaleString()} more`;
   $("#count").textContent = `${rows.length.toLocaleString()} ${isAll() && state.rows === "season" ? "rows" : what}, ${scope}${state.view === "pg" ? ", per game" : ""}.${capped}`;
   document.querySelectorAll("#board [data-sort]").forEach((b) => (b.onclick = (e) => onSort(b.dataset.sort, e.shiftKey)));
 }
