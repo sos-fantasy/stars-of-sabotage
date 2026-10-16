@@ -4,22 +4,102 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Stars of Sabotage</title>
-<style>
-:root { --bg:#fbfaf7; --ink:#1d1d1b; --muted:#5c5a55; --accent:#b3261e; }
-@media (prefers-color-scheme: dark) { :root { --bg:#141413; --ink:#ecebe6; --muted:#a9a69d; --accent:#f08a80; } }
-body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--ink); font:17px/1.6 system-ui, sans-serif; padding:1rem; }
-main { max-width:32rem; text-align:center; }
-h1 { font-size:2rem; margin:0 0 .5rem; }
-p { color:var(--muted); }
-a { color:var(--accent); }
-</style>
+<title>Stars of Sabotage | Sabotage fantasy football leaderboard</title>
+<meta name="description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta name="theme-color" content="#15140f">
+<meta property="og:title" content="Stars of Sabotage | Sabotage fantasy football leaderboard">
+<meta property="og:description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta property="og:image" content="assets/og-image.jpg">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
 </head>
-<body>
-<main>
-<h1>Stars of Sabotage</h1>
-<p>Preview deploy is working. The leaderboard goes here next.</p>
-<p><a href="method.html">How Sabotage scoring works</a></p>
+<body class="page-board">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <a class="brand" href="./" aria-label="Stars of Sabotage home">
+    <picture><source srcset="assets/whoopsie-sm.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="" width="44" height="49"></picture>
+    <span class="wordmark">Stars of <em>Sabotage</em></span>
+  </a>
+  <nav aria-label="Main"><a href="./" aria-current="page">Leaderboard</a><a href="method.html">Scoring</a></nav>
+</header>
+<main id="main">
+
+<section class="hero">
+  <picture class="hero-art"><source srcset="assets/whoopsie.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267"></picture>
+  <div>
+    <p class="eyebrow">A fantasy football league for everything that goes <span>wrong</span></p>
+    <h1>The <span class="hl">Leaderboard</span></h1>
+    <p class="lede">Every NFL player and defense, ranked by Sabotage points. <a href="method.html">How scoring works</a>.</p>
+    <p class="weekline" id="weekline" aria-live="polite"></p>
+  </div>
+</section>
+
+<section class="wreck" id="wreck" aria-labelledby="wreck-title" hidden>
+  <h2 id="wreck-title"><span id="wreck-week"></span> wreckage report</h2>
+  <div class="wreck-grid" id="wreck-grid"></div>
+</section>
+
+<section class="board" aria-labelledby="board-title">
+  <h2 id="board-title" class="sr-only">Player and defense rankings</h2>
+  <form class="controls" id="controls" onsubmit="return false">
+    <div class="ctl">
+      <label for="f-from">Weeks</label>
+      <div class="pair"><select id="f-from"></select><span>to</span><select id="f-to"></select></div>
+    </div>
+    <fieldset class="ctl chips" id="f-pos">
+      <legend>Position</legend>
+    </fieldset>
+    <div class="ctl">
+      <label for="f-team">Team</label>
+      <select id="f-team"><option value="">All teams</option></select>
+    </div>
+    <fieldset class="ctl seg">
+      <legend>Show</legend>
+      <div class="segbtns">
+        <button type="button" data-view="total" aria-pressed="true">Totals</button>
+        <button type="button" data-view="pg" aria-pressed="false">Per game</button>
+      </div>
+    </fieldset>
+    <fieldset class="ctl seg">
+      <legend>Columns</legend>
+      <div class="segbtns">
+        <button type="button" data-cols="pts" aria-pressed="true">Points</button>
+        <button type="button" data-cols="cnt" aria-pressed="false">Stats</button>
+      </div>
+    </fieldset>
+    <div class="ctl small">
+      <label for="f-min">Min games</label>
+      <input id="f-min" type="number" min="0" max="18" inputmode="numeric" value="0">
+    </div>
+    <div class="ctl grow">
+      <label for="f-q">Find</label>
+      <input id="f-q" type="search" placeholder="Player or team" autocomplete="off">
+    </div>
+    <div class="ctl actions">
+      <button type="button" id="b-reset" class="ghost">Reset</button>
+      <button type="button" id="b-csv" class="ghost">CSV</button>
+    </div>
+  </form>
+  <p class="count" id="count" aria-live="polite"></p>
+  <div class="table-wrap" id="table-wrap" tabindex="0" aria-label="Leaderboard table, scrolls sideways on small screens">
+    <table id="board">
+      <thead></thead>
+      <tbody><tr><td class="loading">Loading the damage report&hellip;</td></tr></tbody>
+    </table>
+  </div>
+  <p class="hint">Click a column to sort. Click again to flip it, a third time to reset. Shift-click adds a second sort.</p>
+</section>
+
 </main>
+<footer class="site-foot">
+  <p id="foot-status" class="foot-status"></p>
+  <p>Data: <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Scores are computed by Stars of Sabotage and are not official.</p>
+  <p>Not affiliated with or endorsed by the NFL, any NFL team, Yahoo, ESPN, CBS Sports, or Sleeper.</p>
+</footer>
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

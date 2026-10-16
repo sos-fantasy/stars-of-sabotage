@@ -4,39 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Scoring and Method | Stars of Sabotage</title>
-<meta name="description" content="How Stars of Sabotage scores NFL players and defenses, where the data comes from, and how points allowed is counted.">
-<style>
-:root { --bg:#fbfaf7; --ink:#1d1d1b; --muted:#5c5a55; --line:#dcd8cf; --accent:#b3261e; --panel:#ffffff; }
-@media (prefers-color-scheme: dark) { :root { --bg:#141413; --ink:#ecebe6; --muted:#a9a69d; --line:#34332f; --accent:#f08a80; --panel:#1c1c1a; } }
-* { box-sizing:border-box; }
-body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.6 Georgia, "Times New Roman", serif; }
-main { max-width:46rem; margin:0 auto; padding:2.5rem 1rem 4rem; }
-h1 { font:700 2.1rem/1.15 system-ui, sans-serif; margin:0 0 .4rem; letter-spacing:-.01em; }
-h2 { font:700 1.25rem/1.3 system-ui, sans-serif; margin:2.6rem 0 .6rem; padding-top:1rem; border-top:2px solid var(--ink); }
-h3 { font:700 1rem/1.3 system-ui, sans-serif; margin:1.6rem 0 .4rem; }
-.lede { color:var(--muted); margin-top:0; }
-.tag { display:inline-block; font:600 .75rem/1 system-ui, sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); margin-bottom:.8rem; }
-table { width:100%; border-collapse:collapse; margin:.6rem 0 1.2rem; background:var(--panel); font:15px/1.4 system-ui, sans-serif; }
-th, td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); }
-th { font-weight:600; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
-td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
-.example { background:var(--panel); border-left:4px solid var(--accent); padding:.9rem 1.1rem; margin:1rem 0; font:15px/1.55 system-ui, sans-serif; }
-.example p { margin:.3rem 0; }
-.wrap { overflow-x:auto; }
-a { color:var(--accent); }
-footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font:14px/1.5 system-ui, sans-serif; }
-</style>
+<title>How Sabotage scoring works | Stars of Sabotage</title>
+<meta name="description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta name="theme-color" content="#15140f">
+<meta property="og:title" content="How Sabotage scoring works | Stars of Sabotage">
+<meta property="og:description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta property="og:image" content="assets/og-image.jpg">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
 </head>
-<body>
-<main>
-<span class="tag">Scoring rules v2026.1</span>
-<h1>How Sabotage scoring works</h1>
+<body class="page-method">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <a class="brand" href="./" aria-label="Stars of Sabotage home">
+    <picture><source srcset="assets/whoopsie-sm.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="" width="44" height="49"></picture>
+    <span class="wordmark">Stars of <em>Sabotage</em></span>
+  </a>
+  <nav aria-label="Main"><a href="./">Leaderboard</a><a href="method.html" aria-current="page">Scoring</a></nav>
+</header>
+<main id="main">
+
+<article class="prose">
+<p class="eyebrow">Scoring rules v2026.1</p>
+<h1>How Sabotage <span class="hl">scoring</span> works</h1>
 <p class="lede">Most fantasy formats reward good football. This one rewards the plays that hurt a team: incompletions, sacks, turnovers, missed kicks, and defenses that give up points. Higher totals mean more sabotage.</p>
 
 <h2>The scoring table</h2>
 <h3>Offense: QB, RB, WR, TE</h3>
-<div class="wrap"><table><thead><tr><th>Event</th><th class="num">Points</th></tr></thead><tbody>
+<div class="table-wrap plain"><table><thead><tr><th>Event</th><th class="num">Points</th></tr></thead><tbody>
 <tr><td>Incomplete pass</td><td class="num">2</td></tr>
 <tr><td>Sack taken</td><td class="num">5</td></tr>
 <tr><td>Rushing attempt</td><td class="num">1</td></tr>
@@ -49,7 +48,7 @@ footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); co
 <p>A lost fumble earns both lines: 17 points. A pick six earns both lines too: 31 points.</p>
 
 <h3>Kickers</h3>
-<div class="wrap"><table><thead><tr><th>Event</th><th class="num">Points</th></tr></thead><tbody>
+<div class="table-wrap plain"><table><thead><tr><th>Event</th><th class="num">Points</th></tr></thead><tbody>
 <tr><td>Field goal missed, 0-19 yards</td><td class="num">21</td></tr>
 <tr><td>Field goal missed, 20-29 yards</td><td class="num">18</td></tr>
 <tr><td>Field goal missed, 30-39 yards</td><td class="num">16</td></tr>
@@ -59,7 +58,7 @@ footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); co
 </tbody></table></div>
 
 <h3>Team defense</h3>
-<div class="wrap"><table><thead><tr><th>Points allowed</th><th class="num">Points</th></tr></thead><tbody>
+<div class="table-wrap plain"><table><thead><tr><th>Points allowed</th><th class="num">Points</th></tr></thead><tbody>
 <tr><td>Shutout (0 allowed)</td><td class="num">0</td></tr>
 <tr><td>1-6 points allowed</td><td class="num">7</td></tr>
 <tr><td>7-13 points allowed</td><td class="num">14</td></tr>
@@ -78,7 +77,7 @@ footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); co
 
 <h2>Points allowed, and why it is not always the final score</h2>
 <p>A defense is charged only for points it actually gave up. Points the other team scored against the offense do not count against the defense. We follow the same rule Yahoo uses, since Stars of Sabotage leagues are scored on Yahoo.</p>
-<div class="wrap"><table><thead><tr><th>Opponent scores on</th><th>Counts against the defense?</th></tr></thead><tbody>
+<div class="table-wrap plain"><table><thead><tr><th>Opponent scores on</th><th>Counts against the defense?</th></tr></thead><tbody>
 <tr><td>Offensive touchdowns and field goals</td><td>Yes</td></tr>
 <tr><td>Kickoff and punt return touchdowns</td><td>Yes. Special teams belong to the defense unit</td></tr>
 <tr><td>Every extra point and two-point conversion</td><td>Yes, even after a pick six</td></tr>
@@ -89,22 +88,25 @@ footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--line); co
 <tr><td>Defensive two-point returns</td><td>No</td></tr>
 </tbody></table></div>
 <div class="example">
-<p><strong>Example: Arizona at the Giants, 2026 Week 4.</strong></p>
-<p>The Giants scored 36. Six of those came on a pick six with 11 seconds left, and the game ended without an extra point try. Arizona's defense is charged with 36 minus 6, which is 30. That lands in the 28-34 bucket, so Arizona scores 35 Sabotage points for the week instead of 42.</p>
+<p class="eyebrow">Example</p>
+<p><strong>Arizona at the Giants, 2026 Week 4.</strong> The Giants scored 36. Six of those came on a pick six with 11 seconds left, and the game ended without an extra point try. Arizona's defense is charged with 36 minus 6, which is 30. That lands in the 28-34 bucket, so Arizona scores 35 Sabotage points for the week instead of 42.</p>
 </div>
 <p>The other big platforms draw the line in about the same place. All of them count kick and punt return touchdowns against the defense. ESPN leaves out pick sixes and fumble return touchdowns. CBS Sports leaves out points scored against the offense, naming pick sixes and safeties. Sleeper leaves out touchdowns the defense scores itself, and charges every extra point. The help pages for ESPN and Sleeper do not say how safeties are handled.</p>
 
 <h2>Where the data comes from</h2>
 <p>Game statistics come from <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, published under the <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> license. We do not use any fantasy platform's data.</p>
-<p>Scores update after each game day. The NFL issues stat corrections from Monday through Wednesday, so every week is marked provisional until the Thursday morning refresh, then final.</p>
+<p>Scores update several times on game days and once each morning. The NFL issues stat corrections from Monday through Wednesday, so every week is marked provisional until 10 AM Eastern on the Thursday after its last game, then final.</p>
 
 <h2>Rule versions</h2>
-<p>Every score on this site records the rule version that produced it. If the league changes its rules, past seasons are rescored under a new version, and the old version stays on record. Seasons before 2026 are scored under the current rules, which may differ from the rules the league used at the time.</p>
+<p>Every score on this site records the rule version that produced it. If the league changes its rules, past seasons are rescored under a new version, and the old version stays on record.</p>
+</article>
 
-<footer>
-<p>Stars of Sabotage is not affiliated with or endorsed by the NFL, any NFL team, Yahoo, ESPN, CBS Sports, or Sleeper.</p>
-<p>Data: nflverse (CC BY 4.0).</p>
-</footer>
 </main>
+<footer class="site-foot">
+  <p id="foot-status" class="foot-status"></p>
+  <p>Data: <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Scores are computed by Stars of Sabotage and are not official.</p>
+  <p>Not affiliated with or endorsed by the NFL, any NFL team, Yahoo, ESPN, CBS Sports, or Sleeper.</p>
+</footer>
+<script type="module" src="assets/foot.js"></script>
 </body>
 </html>
