@@ -67,6 +67,7 @@ def build_season(season: int, now: datetime, cfg: dict, data_dir: Path | None, d
     weeks = export.week_table(sched, now)
     _write(data_out / f"scores-{season}.json", export.compact(players, export.PLAYER_COLS))
     _write(data_out / f"defense-{season}.json", export.compact(defense, export.DEF_COLS))
+    _write(data_out / f"games-{season}.json", export.games(sched))
     played = [w for w in weeks if w["status"] != "upcoming"]
     entry = {
         "season": season,
@@ -124,7 +125,7 @@ def main(argv=None) -> int:
         if season in todo:
             continue
         ok = True
-        for name in (f"scores-{season}.json", f"defense-{season}.json"):
+        for name in (f"scores-{season}.json", f"defense-{season}.json", f"games-{season}.json"):
             src = prev_data / name
             if src.exists():
                 shutil.copy2(src, data_out / name)
@@ -161,6 +162,12 @@ def main(argv=None) -> int:
     pc, dc = export.career_totals(ps, ds)
     _write(data_out / "player-careers.json", pc)
     _write(data_out / "defense-careers.json", dc)
+    pfiles, search = export.player_files(data_out, [s["season"] for s in seasons])
+    pdir = data_out / "players"
+    pdir.mkdir(exist_ok=True)
+    for pid, obj in pfiles.items():
+        _write(pdir / f"{pid}.json", obj)
+    _write(data_out / "search.json", search)
 
     weeks = current["weeks"]
     played = [w for w in weeks if w["status"] in ("final", "provisional", "in_progress")]

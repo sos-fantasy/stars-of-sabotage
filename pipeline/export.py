@@ -130,3 +130,70 @@ def highlights(season: int, week: int, players: pl.DataFrame, stats: pl.DataFram
                        (pl.col("pts_fumble") + pl.col("pts_fumble_lost")).alias("pts_fumbles")))
     d = defenses.filter(pl.col("week") == week)
     return stories.build(week, p.to_dicts(), d.to_dicts(), season)
+
+
+# ---------- Phase 2: game context, per-player files, search index ----------
+
+GAME_COLS = ["week", "game_id", "gameday", "gametime", "home_team", "away_team", "home_score", "away_score",
+             "roof", "wind", "temp"]
+
+
+def games(schedules: pl.DataFrame) -> dict:
+    """Game context per season: who was home, roof type, recorded wind and temperature."""
+    g = schedules.filter(pl.col("game_type") == "REG").sort(["week", "gameday", "gametime"])
+    return compact(g.select([pl.col(c) for c in GAME_COLS]), GAME_COLS)
+
+
+def _indoor(roof: str | None) -> bool | None:
+    if roof is None:
+        return None
+    return roof in ("dome", "closed")
+
+
+def player_files(data_dir, seasons: list[int]) -> tuple[dict[str, dict], dict]:
+    """One file per player with every week of his history plus game context, season totals,
+    and his rank among his position each season; and a compact search index."""
+    from pathlib import Path
+    data_dir = Path(data_dir)
+    frames, ctx = [], []
+    for s in seasons:
+        p = json.loads((data_dir / f"scores-{s}.json").read_text())
+        frames.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row").with_columns(pl.lit(s).alias("season")))
+        gp = data_dir / f"games-{s}.json"
+        if gp.exists():
+            g = json.loads(gp.read_text())
+            G = pl.DataFrame(g["rows"], schema=g["cols"], orient="row")
+            for side, other in (("home_team", "away_team"), ("away_team", "home_team")):
+                ctx.append(G.select(pl.lit(s).alias("season"), "week", pl.col(side).alias("team"),
+                                    pl.lit(1 if side == "home_team" else 0).alias("home"),
+                                    pl.col("roof"), pl.col("wind").cast(pl.Float64), pl.col("gameday")))
+    P = pl.concat(frames)
+    if ctx:
+        C = pl.concat(ctx).unique(["season", "week", "team"])
+        P = P.join(C, on=["season", "week", "team"], how="left")
+    else:
+        P = P.with_columns(pl.lit(None).alias("home"), pl.lit(None).alias("roof"),
+                           pl.lit(None, dtype=pl.Float64).alias("wind"), pl.lit(None).alias("gameday"))
+    # season totals and position rank (QB, RB incl. FB, WR, TE, K)
+    S = (P.sort(["season", "week"]).group_by(["season", "player_id"], maintain_order=True)
+         .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
+              pl.len().alias("g"), *[pl.col(c).sum() for c in SUM_COLS])
+         .with_columns(pl.when(pl.col("position") == "FB").then(pl.lit("RB")).otherwise(pl.col("position")).alias("pg"))
+         .with_columns(pl.col("sabotage_pts").rank("min", descending=True).over(["season", "pg"]).cast(pl.Int64).alias("pos_rank"),
+                       pl.len().over(["season", "pg"]).alias("pos_n")))
+    week_cols = ["season", "week", "team", "opponent_team", "home", "roof", "wind", "gameday"] + SUM_COLS
+    season_cols = ["season", "team", "position", "g", "pos_rank", "pos_n"] + SUM_COLS
+    out, index = {}, []
+    for pid, wk in P.sort(["season", "week"]).group_by("player_id", maintain_order=True):
+        pid = pid[0]
+        ss = S.filter(pl.col("player_id") == pid).sort("season")
+        last = ss.row(-1, named=True)
+        out[pid] = {
+            "id": pid, "name": last["player_display_name"], "position": last["position"], "team": last["team"],
+            "first": ss["season"].min(), "last": ss["season"].max(),
+            "seasons": compact(ss, season_cols), "weeks": compact(wk, week_cols),
+        }
+        index.append([pid, last["player_display_name"], last["position"], last["team"], ss["season"].min(),
+                      ss["season"].max(), int(ss["sabotage_pts"].sum())])
+    index.sort(key=lambda r: -r[6])
+    return out, {"cols": ["id", "name", "pos", "team", "first", "last", "career_pts"], "rows": index}
