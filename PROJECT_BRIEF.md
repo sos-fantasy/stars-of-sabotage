@@ -167,7 +167,7 @@ YouTube RSS + manual list   -->        v
 ### 5.1 Stack defaults (change if the owner disagrees)
 
 - Pipeline: Python 3.11+, `nflreadpy`, pandas or polars, PyYAML, requests, feedparser. Runs on GitHub Actions.
-- Front end: plain ES modules, no framework. Tabulator (MIT) for sortable tables, Chart.js (MIT) for charts. Vendor the libraries into the repo so the site does not depend on a CDN.
+- Front end: plain ES modules, no framework. The leaderboard table is hand-written (sorting, aria-sort, sticky header and first column) instead of Tabulator, to keep it small and fully accessible. Chart.js (MIT) remains the plan for charts in Phase 2. Fonts are self-hosted: Anton and JetBrains Mono (both OFL-1.1). No CDN dependencies.
 - Data: JSON files partitioned by season, loaded on demand. Measure real file sizes in Phase 1 before deciding whether to also gzip, split further, or move to SQLite or MySQL.
 
 ### 5.2 Deploy options (decide in Phase 0)
@@ -390,3 +390,21 @@ Phase 5, polish:
 1. "Start Phase 0. Print the real nflverse schemas for player stats, play-by-play, and schedules, and update the field mapping table in section 4.1."
 2. "Build the scoring engine from config/scoring.yml and compute Sabotage points for weeks 1 through the latest completed week of 2026. Show me the top 10 players and top 5 defenses, plus the results under each interpretation in 3.3 so I can compare against my league."
 3. "Read NFL.com's terms and nflverse's license and data notes, and summarize what they allow for a public, free, ad-free website. Quote the relevant lines (short quotes only) and tell me what you could not find."
+
+## 18. Brand and voice (owner decisions, October 16, 2026)
+
+Look: carried over from the coming-soon page. Near-black background (#15140f), cream text (#ece6d8), yellow accent (#f2b705), burnt-orange highlight bar (#b8421f). Headlines in Anton, uppercase. Body and tables in JetBrains Mono.
+
+Mascot: the "Whoopsie" girl (sketch of a wide-eyed kid in a yellow beanie). Bust is the logo and hero art; the head-only version is the favicon and touch icon. Source files live in `site/assets/`.
+
+Audience: fantasy football players, mostly men, smart, with a light schadenfreude sense of humor. Sabotage takes independent thinking, since mainstream fantasy advice assumes normal scoring.
+
+Voice: stats pages stay plain and precise. Humor lives only in highlight stories (the weekly "wreckage report" and any future stat stories), written as a witty, free-spirited announcer with vivid metaphors. Rules for stories: every number comes from the data; jokes wrap facts, never replace them; no mocking injuries or anything off the field; no em dashes; refer to teams by nickname. Templates live in `pipeline/stories.py`, with tests enforcing style and placeholders.
+
+Story timing: awards cover the latest week once at least half its games are final, otherwise the previous week.
+
+## 19. Phase 1 status (October 16, 2026)
+
+Live at starsofsabotage.com/preview/ (noindex while in preview). Hostinger deploys the `deploy` branch into `public_html/preview` on each push. GitHub Actions workflow `.github/workflows/update.yml` runs hourly at :07 UTC; `pipeline/schedule.py` decides in Eastern time whether to work (daily 6 and 10 AM; game days 4, 7, 10 PM; overnight 1 and 4 AM after game days; Wednesday 10 PM and Thursday 4 AM for corrections). It publishes only when output changed, and at least once a day via the `checked_on` date, which also keeps the public repo active. A week is final at 10 AM ET on the first Thursday after its last game.
+
+To move off /preview: point the Hostinger deployment at `public_html`, and set `SOS_NOINDEX` to "0" in the workflow.
