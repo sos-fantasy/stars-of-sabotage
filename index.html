@@ -33,7 +33,7 @@
   <div>
     <p class="eyebrow">A fantasy football league for everything that goes <span>wrong</span></p>
     <h1>The <span class="hl">Leaderboard</span></h1>
-    <p class="lede">Every NFL player and defense, ranked by Sabotage points. <a href="method.html">How scoring works</a>.</p>
+    <p class="lede">Every NFL player and defense since 1999, ranked by Sabotage points. <a href="method.html">How scoring works</a>.</p>
     <p class="weekline" id="weekline" aria-live="polite"></p>
   </div>
 </section>
@@ -47,9 +47,21 @@
   <h2 id="board-title" class="sr-only">Player and defense rankings</h2>
   <form class="controls" id="controls" onsubmit="return false">
     <div class="ctl">
-      <label for="f-from">Weeks</label>
-      <div class="pair"><select id="f-from"></select><span>to</span><select id="f-to"></select></div>
+      <label for="f-season">Season</label>
+      <select id="f-season"></select>
     </div>
+    <div class="ctl" id="weeks-ctl">
+      <label for="f-from">Weeks</label>
+      <div class="pair"><select id="f-from"></select><span>to</span><select id="f-to"></select>
+        <button type="button" id="b-full" class="toggle" aria-pressed="true">Full season</button></div>
+    </div>
+    <fieldset class="ctl seg" id="rows-ctl" hidden>
+      <legend>Rows</legend>
+      <div class="segbtns">
+        <button type="button" data-rows="career" aria-pressed="true">Career</button>
+        <button type="button" data-rows="season" aria-pressed="false">Single seasons</button>
+      </div>
+    </fieldset>
     <fieldset class="ctl chips" id="f-pos">
       <legend>Position</legend>
     </fieldset>
@@ -84,6 +96,7 @@
       <button type="button" id="b-csv" class="ghost">CSV</button>
     </div>
   </form>
+  <p class="histnote" id="histnote" hidden>Past seasons are scored under the current Sabotage rules (v2026.1) using Yahoo's points-allowed rule. Team codes follow nflverse, which uses today's abbreviations, so the 2012 Chargers show as LAC.</p>
   <p class="count" id="count" aria-live="polite"></p>
   <div class="table-wrap" id="table-wrap" tabindex="0" aria-label="Leaderboard table, scrolls sideways on small screens">
     <table id="board">

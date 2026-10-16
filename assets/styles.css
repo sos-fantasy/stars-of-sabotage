@@ -109,13 +109,16 @@ select { padding-right: 26px; appearance: none;
   background-position: calc(100% - 13px) 15px, calc(100% - 8px) 15px; background-size: 5px 5px; background-repeat: no-repeat; }
 input[type="search"] { width: 100%; }
 .chips > div, .segbtns { display: flex; flex-wrap: wrap; gap: 4px; }
-.chips button, .segbtns button, button.ghost {
+.chips button, .segbtns button, button.ghost, button.toggle {
   background: var(--bg); border: 1px solid var(--line-2); padding: 7px 10px; min-height: 36px; cursor: pointer;
   text-transform: uppercase; letter-spacing: .08em; font-size: 12px;
 }
-.chips button[aria-pressed="true"], .segbtns button[aria-pressed="true"] { background: var(--yellow); border-color: var(--yellow); color: var(--bg); font-weight: 700; }
+.chips button[aria-pressed="true"], .segbtns button[aria-pressed="true"], button.toggle[aria-pressed="true"] { background: var(--yellow); border-color: var(--yellow); color: var(--bg); font-weight: 700; }
 button.ghost:hover, .chips button:hover, .segbtns button:hover { border-color: var(--ink); }
 .count { color: var(--muted); font-size: 12px; margin: 12px 0 6px; }
+.histnote { color: var(--muted); font-size: 12px; margin: 12px 0 0; padding: 8px 12px; border-left: 3px solid var(--yellow); background: var(--bg-2); }
+[hidden] { display: none !important; }
+#board[aria-busy] tbody { opacity: .5; }
 .hint { color: var(--dim); font-size: 12px; margin-top: 8px; }
 
 /* Tables */
