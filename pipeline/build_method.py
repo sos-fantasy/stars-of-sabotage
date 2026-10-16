@@ -41,6 +41,7 @@ TEMPLATE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
 <title>Scoring and Method | Stars of Sabotage</title>
 <meta name="description" content="How Stars of Sabotage scores NFL players and defenses, where the data comes from, and how points allowed is counted.">
 <style>
