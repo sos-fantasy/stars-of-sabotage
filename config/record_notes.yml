@@ -1,0 +1,9 @@
+# Known differences between nflverse (our data source) and the official box score
+# for record-holding performances. Shown under the record on the Super Stars page.
+# Key: stat|season|week|player_display_name  (week 0 = season record)
+# Each entry was checked by hand against the cited source.
+
+"n_incomplete|2007|15|Eli Manning": >-
+  Official box score: 18 of 53, which is 35 incompletions. nflverse play-by-play
+  has 52 attempts for this game, so our count is one lower.
+  Source: pro-football-reference.com/boxscores/200712160nyg.htm

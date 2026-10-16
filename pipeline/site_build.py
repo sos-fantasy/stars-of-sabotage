@@ -23,7 +23,8 @@ def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = ""
     robots = '<meta name="robots" content="noindex">\n' if noindex else ""
     nav = "".join(
         f'<a href="{href}"{" aria-current=\"page\"" if key == page else ""}>{label}</a>'
-        for key, href, label in (("board", "./", "Leaderboard"), ("method", "method.html", "Scoring"))
+        for key, href, label in (("board", "./", "Leaderboard"), ("supers", "super-stars.html", "Super Stars"),
+                                 ("method", "method.html", "Scoring"))
     )
     return f"""<!doctype html>
 <html lang="en">
@@ -236,6 +237,72 @@ METHOD_BODY = """
 """
 
 
+def _q(**kw) -> str:
+    from urllib.parse import urlencode
+    return "./?" + urlencode({k: v for k, v in kw.items() if v not in (None, "")})
+
+
+def _holder_line(h: dict, scope: str, is_def: bool) -> str:
+    when = f"{h['season']} Week {h['week']}" if scope == "game" else f"{h['season']} season"
+    vs = f" vs {escape(h['opp'])}" if scope == "game" and h.get("opp") else ""
+    team = "" if is_def else f" <span class=\"tm\">{escape(h['team'])}</span>"
+    if scope == "game":
+        link = _q(season=h["season"], **{"from": h["week"], "to": h["week"]}, pos="DEF" if is_def else None,
+                  q=h["team"].lower() if is_def else h["name"])
+    else:
+        link = _q(season=h["season"], pos="DEF" if is_def else None, q=h["team"].lower() if is_def else h["name"])
+    live = ' <span class="badge in_progress">Active season</span>' if h.get("current") else ""
+    return f'<a href="{escape(link)}">{escape(h["name"])}</a>{team} <span class="when">{when}{vs}</span>{live}'
+
+
+def supers_body(rec: dict) -> str:
+    first, last = rec["first_season"], rec["last_season"]
+    parts = [f"""
+<section class="hero">
+  <picture class="hero-art"><source srcset="assets/whoopsie.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267"></picture>
+  <div>
+    <p class="eyebrow">Hall of shame, {first} to {last}</p>
+    <h1>Super <span class="hl">Stars</span></h1>
+    <p class="lede">The worst single game and the worst single season since {first} for every stat Sabotage scores. Every number is real. The commentary is ours.</p>
+    <p class="weekline"><span>Seasons before 2021 had 16 games, so some season records had one fewer game to work with. Records update as the current season plays.</span></p>
+  </div>
+</section>"""]
+    group_order = list(rec["groups"])
+    for g in group_order:
+        stats = [s for s in rec["stats"] if s["group"] == g]
+        if not stats:
+            continue
+        parts.append(f'<section class="rec-group" aria-labelledby="g-{g.replace(" ", "-")}">'
+                     f'<h2 id="g-{g.replace(" ", "-")}">{escape(rec["groups"][g])}</h2>')
+        for s in stats:
+            is_def = s["stat"] == "points_allowed"
+            parts.append(f'<div class="rec-row"><h3 class="rec-stat">{escape(s["label"])}'
+                         f'{f" <small>{s["per"]} Sabotage pts each</small>" if s["per"] else ""}</h3><div class="rec-cards">')
+            for r in s["records"]:
+                h0 = r["holders"][0]
+                tied = ""
+                if r["tied"] > 1:
+                    others = "; ".join(_holder_line(h, r["scope"], is_def) for h in r["holders"][1:])
+                    more = r["tied"] - len(r["holders"])
+                    tied = (f'<p class="tied">Shared with {others}'
+                            f'{f" and {more} more" if more > 0 else ""}.</p>')
+                worth = (f'<span class="worth">{r["sabotage_pts"]:,} Sabotage pts</span>'
+                         if r["sabotage_pts"] is not None and s["stat"] != "sabotage_pts" else "")
+                notes = "".join(f'<p class="note">{escape(h["note"])}</p>' for h in r["holders"] if h.get("note"))
+                label = "Single game" if r["scope"] == "game" else "Single season"
+                parts.append(f"""<article class="story rec">
+  <p class="label">{label}</p>
+  <p class="big"><span class="num">{r["value"]:,}</span> <span class="unit">{escape(r["unit"])}</span>{worth}</p>
+  <p class="holder">{_holder_line(h0, r["scope"], is_def)}</p>
+  <p class="text">{escape(r["text"])}</p>
+  {tied}{notes}
+</article>""")
+            parts.append("</div></div>")
+        parts.append("</section>")
+    parts.append('<p class="hint">Records use nflverse play-by-play, which can differ from an official box score by a play in rare cases. Known differences are noted on the record. Defensive points allowed follow the Yahoo rule on the <a href="method.html">scoring page</a>.</p>')
+    return "\n".join(parts)
+
+
 def _hash(path: Path) -> str:
     import hashlib
     return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
@@ -257,7 +324,7 @@ HTACCESS = """# Written by pipeline/site_build.py
 """
 
 
-def build(out: Path, noindex: bool = True) -> None:
+def build(out: Path, noindex: bool = True, records: dict | None = None) -> None:
     out.mkdir(parents=True, exist_ok=True)
     shutil.copytree(SITE / "assets", out / "assets", dirs_exist_ok=True)
     shutil.copy2(SITE / "favicon.ico", out / "favicon.ico")
@@ -274,6 +341,15 @@ def build(out: Path, noindex: bool = True) -> None:
         "Stars of Sabotage | Sabotage fantasy football leaderboard", BOARD_BODY.replace("{version}", version),
         page="board", noindex=noindex,
         scripts=f'<script type="module" src="assets/app.js?v={v["app"]}"></script>')))
+    if records is None:
+        import json
+        rp = out / "data" / "records.json"
+        records = json.loads(rp.read_text()) if rp.exists() else None
+    if records:
+        (out / "super-stars.html").write_text(tag(layout(
+            "Super Stars | Stars of Sabotage", supers_body(records),
+            page="supers", noindex=noindex,
+            scripts=f'<script type="module" src="assets/foot.js?v={v["foot"]}"></script>')))
     (out / "method.html").write_text(tag(layout(
         "How Sabotage scoring works | Stars of Sabotage", method_body(), page="method", noindex=noindex,
         scripts=f'<script type="module" src="assets/foot.js?v={v["foot"]}"></script>')))

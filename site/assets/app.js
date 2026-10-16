@@ -455,7 +455,7 @@ function render() {
   const what = state.pos === "ALL" ? "players and defenses" : state.pos === "DEF" ? "defenses" : `${state.pos}s`;
   let scope;
   if (isAll()) scope = state.rows === "season" ? "single seasons, all years" : "career totals, all seasons";
-  else scope = isFullSeason() ? `${state.season} full season` : `${state.season}, weeks ${state.from === state.to ? state.from : `${state.from} to ${state.to}`}`;
+  else scope = isFullSeason() ? `${state.season} full season` : `${state.season}, ${state.from === state.to ? `week ${state.from}` : `weeks ${state.from} to ${state.to}`}`;
   const capped = rows.length > MAX_ROWS ? ` Showing the top ${MAX_ROWS.toLocaleString()}; filter or download the CSV for the rest.` : "";
   $("#count").textContent = `${rows.length.toLocaleString()} ${isAll() && state.rows === "season" ? "rows" : what}, ${scope}${state.view === "pg" ? ", per game" : ""}.${capped}`;
   document.querySelectorAll("#board [data-sort]").forEach((b) => (b.onclick = (e) => onSort(b.dataset.sort, e.shiftKey)));

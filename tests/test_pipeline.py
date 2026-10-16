@@ -92,3 +92,25 @@ def test_build_does_not_feature_same_player_twice():
     assert who.count("RB1") == 1
     assert {"QB1", "RB1", "WR1"} <= set(who)
     assert out[0]["label"] == "Saboteur of the week"
+
+
+def test_washington_nickname_by_season():
+    assert stories.nick("WAS", 2007) == "Redskins"
+    assert stories.nick("WAS", 2021) == "Washington Football Team"
+    assert stories.nick("WAS", 2022) == "Commanders"
+    assert stories.nick("WAS") == "Commanders"
+    assert stories.nick("LA", 2003) == "Rams"
+
+
+def test_record_templates_render_and_follow_house_style():
+    import records
+    fields = {"name": "A. Player", "team": "Eagles", "opp": "Broncos", "a_opp": "a Broncos", "season": 2007,
+              "week": 4, "value": "12", "units": "sacks", "pts": 60}
+    for (stat, scope), opts in records.TEMPLATES.items():
+        for t in opts:
+            out = t.format(**fields)
+            assert "—" not in out and "–" not in out, (stat, scope)
+            assert "{" not in out
+    # every scored stat has a game and a season story
+    for stat, *_ in records.STATS:
+        assert (stat, "game") in records.TEMPLATES and (stat, "season") in records.TEMPLATES

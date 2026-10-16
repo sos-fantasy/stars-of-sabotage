@@ -420,3 +420,11 @@ Leaderboard: season selector (each year plus All seasons), Full season button fo
 Known data notes: nflverse uses current team codes for old seasons (2012 Chargers show as LAC, 2005 Raiders as LV). One 1999 stat row (Steve Bono, week 9) had no team; the pipeline fills missing teams from play-by-play. Seasons before 2021 had 16 games, so per-game numbers compare better across eras.
 
 Next idea from the owner: a "Super Stars" hall-of-shame page with all-time worst by each stat (receptions and rushing attempts excluded, since they are not bad plays).
+
+## 21. Super Stars page (October 16, 2026)
+
+`super-stars.html`: a single-game record and a single-season record for every scored stat (total Sabotage points, incompletions, sacks, interceptions, pick sixes, fumbles, fumbles lost, missed or blocked field goals, missed or blocked extra points, points allowed by a defense, rushing attempts, receptions), 1999 to now. Owner direction: games and seasons only, no careers; presented as stories in the Wreckage Report voice. Built statically by the pipeline (`pipeline/records.py`, data in `data/records.json`) and refreshed every run, so a current-season record shows up automatically with an "Active season" badge. Ties list co-holders.
+
+Checked against outside sources: Rudi Johnson 43 carries (Bengals record, tied the NFL mark for a regulation game), Matt Gay 3 failed extra points on Nov 24, 2019 (PFR scoring summary). Known data difference: Eli Manning's 2007 Week 15 game is 18 of 53 officially (35 incompletions) but 52 attempts in nflverse (34); the record card carries a note. Add any future differences to `config/record_notes.yml`.
+
+Team nicknames in stories are era-correct for Washington (Redskins through 2019, Washington Football Team 2020 and 2021, Commanders 2022 on). Team codes in tables still follow nflverse.

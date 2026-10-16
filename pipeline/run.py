@@ -23,6 +23,7 @@ import polars as pl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import export  # noqa: E402
+import records  # noqa: E402
 import schedule  # noqa: E402
 import score  # noqa: E402
 import site_build  # noqa: E402
@@ -188,7 +189,9 @@ def main(argv=None) -> int:
         "source": "nflverse (CC BY 4.0)",
     }
     _write(data_out / "meta.json", meta)
-    site_build.build(out, noindex=os.environ.get("SOS_NOINDEX", "1") == "1")
+    recs = records.build(data_out, [s["season"] for s in seasons], cfg, SEASON)
+    _write(data_out / "records.json", recs)
+    site_build.build(out, noindex=os.environ.get("SOS_NOINDEX", "1") == "1", records=recs)
 
     print(f"[done] seasons {min(index)}-{max(index)} ({len(index)}), rebuilt {todo[0]}"
           f"{'-' + str(todo[-1]) if len(todo) > 1 else ''}, latest week {latest}, "

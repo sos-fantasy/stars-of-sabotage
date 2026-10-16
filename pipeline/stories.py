@@ -56,7 +56,15 @@ NICK = {
 }
 
 
-def nick(abbr: str) -> str:
+def nick(abbr: str, season: int | None = None) -> str:
+    """Team nickname. nflverse uses current codes for old seasons, so names that
+    changed are resolved by season (Washington is the only nickname change since 1999;
+    relocated teams kept their nicknames)."""
+    if abbr == "WAS" and season is not None:
+        if season <= 2019:
+            return "Redskins"
+        if season <= 2021:
+            return "Washington Football Team"
     return NICK.get(abbr, abbr)
 
 
