@@ -123,6 +123,61 @@ TEMPLATES = {
 }
 
 
+# Record alerts: a current-season line that passes or ties an all-time record.
+# "{did}" is a stat-specific verb phrase, e.g. "threw 8 interceptions".
+ALERT_TEMPLATES = {
+    ("broken", "game"): [
+        "{name} {did} against the {opp} in Week {week}, passing {prev}. Nobody since 1999 has done it in a single game. {pending}",
+        "Somebody check the record book, then check it again. {name} {did} against the {opp} in Week {week}, passing {prev}. {pending}",
+    ],
+    ("broken", "season"): [
+        "After Week {week}, {name} has {total} this season, passing {prev}. That is the most since 1999, and the season is not over. {pending}",
+    ],
+    ("tied", "game"): [
+        "{name} {did} against the {opp} in Week {week}, matching the all-time mark held by {prev}. {pending}",
+    ],
+    ("tied", "season"): [
+        "After Week {week}, {name} has {total} this season, level with {prev}. One more and the record changes hands. {pending}",
+    ],
+}
+PENDING = ("Hold the confetti: the NFL can still correct stats this week. If the numbers stand until "
+           "{deadline}, it goes in the book.")
+OFFICIAL = "The stat-correction window has closed, so it is official."
+VERBS = {
+    "sabotage_pts": "scored {v} Sabotage points",
+    "n_incomplete": "threw {v} incomplete passes",
+    "n_sacks": "was sacked {v} times",
+    "n_ints": "threw {v} interceptions",
+    "n_pick_sixes": "threw {v} pick sixes",
+    "n_fumbles": "fumbled {v} times",
+    "n_fumbles_lost": "lost {v} fumbles",
+    "n_fg_missed": "came up empty on {v} field goal tries",
+    "n_pat_missed": "failed on {v} extra points",
+    "points_allowed": "gave up {v} points",
+    "n_carries": "carried the ball {v} times",
+    "n_receptions": "caught {v} passes",
+}
+
+
+def _deadline_text(iso: str) -> str:
+    from datetime import datetime
+    d = datetime.fromisoformat(iso)
+    return f"10 AM Eastern on {d:%A, %B} {d.day}"
+
+
+def _prev_phrase(prev: list[dict], value: int, unit: str, kind: str) -> str:
+    """Who held the record before this season, phrased for a broken or tied record."""
+    p0 = prev[0]
+    others = len(prev) - 1
+    if kind == "broken":
+        if others == 0:
+            return f"{p0['name']}'s {value:,} from {p0['season']}"
+        return f"the {value:,} shared by {p0['name']} ({p0['season']}) and {others} other{'s' if others > 1 else ''}"
+    if others == 0:
+        return f"{p0['name']} ({p0['season']})"
+    return f"{p0['name']} ({p0['season']}) and {others} other{'s' if others > 1 else ''}"
+
+
 def _pick(stat: str, scope: str, key: str) -> str:
     opts = TEMPLATES[(stat, scope)]
     h = int(hashlib.sha256(f"{stat}|{scope}|{key}".encode()).hexdigest(), 16)
@@ -143,9 +198,23 @@ def _per_unit(cfg: dict, path) -> int | None:
     return None if path is None else cfg[path[0]][path[1]]
 
 
-def build(data_dir: Path, seasons: list[int], cfg: dict, current_season: int) -> dict:
+def _week_info(weeks: list[dict] | None) -> dict[int, dict]:
+    """status and correction deadline for each week of the current season."""
+    import schedule
+    from datetime import date
+    info = {}
+    for w in weeks or []:
+        deadline = schedule.final_at(date.fromisoformat(w["last_day"])).isoformat()
+        info[w["week"]] = {"status": w["status"], "final_at": deadline}
+    return info
+
+
+def build(data_dir: Path, seasons: list[int], cfg: dict, current_season: int,
+          weeks: list[dict] | None = None) -> dict:
     notes = yaml.safe_load(NOTES_PATH.read_text()) if NOTES_PATH.exists() else {}
     players, defense = _load(Path(data_dir), seasons)
+    winfo = _week_info(weeks)
+    alerts = []
     out = []
     for stat, label, (one, many), unit_path, group in STATS:
         per = _per_unit(cfg, unit_path)
@@ -156,6 +225,7 @@ def build(data_dir: Path, seasons: list[int], cfg: dict, current_season: int) ->
                     pl.col("team").alias("player_display_name"), pl.col("team").alias("player_id"))
             else:
                 src = players
+            weekly = src
             if scope == "season":
                 src = (src.sort(["season", "week"]).group_by(["season", "player_id"], maintain_order=True)
                        .agg(pl.col("player_display_name").last(), pl.col("team").last(), pl.col(stat).sum(),
@@ -190,8 +260,53 @@ def build(data_dir: Path, seasons: list[int], cfg: dict, current_season: int) ->
                 pts = best
             elif per is not None:
                 pts = best * per
-            recs.append({"scope": scope, "value": best, "unit": many if best != 1 else one,
-                         "sabotage_pts": pts, "holders": hl[:MAX_HOLDERS], "tied": len(hl), "text": text})
+            rec = {"scope": scope, "value": best, "unit": many if best != 1 else one,
+                   "sabotage_pts": pts, "holders": hl[:MAX_HOLDERS], "tied": len(hl), "text": text}
+            alert = _alert(stat, label, scope, src, weekly, best, one, many, current_season, winfo)
+            if alert:
+                rec["alert"] = alert
+                alerts.append({**alert, "stat": stat, "label": label, "scope": scope})
+            recs.append(rec)
         out.append({"stat": stat, "label": label, "group": group, "per": per, "records": recs})
     return {"first_season": min(seasons), "last_season": max(seasons), "current_season": current_season,
-            "groups": GROUPS, "stats": out}
+            "groups": GROUPS, "stats": out, "alerts": alerts}
+
+
+def _alert(stat, label, scope, src, weekly, best, one, many, season, winfo) -> dict | None:
+    """If the current season holds (alone or tied) a record set before it, describe it."""
+    prior = src.filter(pl.col("season") != season)
+    base = prior[stat].max() if prior.height else None
+    if not base:
+        return None
+    cur = src.filter((pl.col("season") == season) & (pl.col(stat) == best))
+    if cur.height == 0 or best < base:
+        return None
+    kind = "broken" if best > base else "tied"
+    row = cur.sort(["week"] if scope == "game" else ["player_display_name"]).row(0, named=True)
+    if scope == "game":
+        week = row["week"]
+    else:
+        # The week this season's running total first passed (or reached) the old record.
+        w = (weekly.filter((pl.col("season") == season) & (pl.col("player_id") == row["player_id"]))
+             .sort("week").with_columns(pl.col(stat).cum_sum().alias("cum")))
+        hit = w.filter(pl.col("cum") > base) if kind == "broken" else w.filter(pl.col("cum") >= base)
+        week = hit["week"][0]
+    wi = winfo.get(week, {"status": "final", "final_at": None})
+    prev_rows = prior.filter(pl.col(stat) == base).sort(["season"] + (["week"] if scope == "game" else []))
+    is_def = stat == "points_allowed"
+    prev = [{"name": (f"the {nick(r['team'], r['season'])}" if is_def else r["player_display_name"]),
+             "season": r["season"]} for r in prev_rows.to_dicts()]
+    unit = many if best != 1 else one
+    name = f"The {nick(row['team'], season)} defense" if is_def else row["player_display_name"]
+    pending = OFFICIAL if wi["status"] == "final" else PENDING.format(deadline=_deadline_text(wi["final_at"]))
+    fields = dict(name=name, opp=nick(row.get("opponent_team") or "", season), week=week,
+                  did=VERBS[stat].format(v=f"{best:,}"), total=f"{best:,} {unit}",
+                  prev=_prev_phrase(prev, base, unit, kind), pending=pending)
+    key = f"{stat}|{scope}|{season}|{row['player_id']}|{week}"
+    opts = ALERT_TEMPLATES[(kind, scope)]
+    text = opts[int(hashlib.sha256(key.encode()).hexdigest(), 16) % len(opts)].format(**fields)
+    official = wi["status"] == "final"
+    title = ("Record " if official else "Potential record ") + ("broken" if kind == "broken" else "tied")
+    return {"kind": kind, "official": official, "title": title, "week": week, "value": best, "unit": unit,
+            "previous": base, "who": name if not is_def else f"{nick(row['team'], season)} defense",
+            "team": row["team"], "status": wi["status"], "final_at": wi["final_at"], "text": text}

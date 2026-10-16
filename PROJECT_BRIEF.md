@@ -428,3 +428,11 @@ Next idea from the owner: a "Super Stars" hall-of-shame page with all-time worst
 Checked against outside sources: Rudi Johnson 43 carries (Bengals record, tied the NFL mark for a regulation game), Matt Gay 3 failed extra points on Nov 24, 2019 (PFR scoring summary). Known data difference: Eli Manning's 2007 Week 15 game is 18 of 53 officially (35 incompletions) but 52 attempts in nflverse (34); the record card carries a note. Add any future differences to `config/record_notes.yml`.
 
 Team nicknames in stories are era-correct for Washington (Redskins through 2019, Washington Football Team 2020 and 2021, Commanders 2022 on). Team codes in tables still follow nflverse.
+
+## 22. Record alerts (October 16, 2026)
+
+Owner request: when a current-season game or season total passes or ties an all-time record, flag it right away, with a clear note that stat corrections could still take it away.
+
+How it works (`pipeline/records.py`, `_alert`): each run compares the current season against the best mark from all earlier seasons, for every stat and both scopes. Passing it is "broken", matching it is "tied". For season records, the alert week is the week the running total first passed (or reached) the old mark. The alert is "Potential record broken/tied" until that week is final (10 AM ET on the first Thursday after the week's last game, the same rule as the leaderboard), then "Record broken/tied". Pending text names the exact deadline, e.g. "If the numbers stand until 10 AM Eastern on Thursday, October 22, it goes in the book."
+
+Where it shows: the home-page Wreckage Report puts alert cards first (double width) while pending, plus any record set in the week the report covers; the Super Stars card shows a badge, and while pending shows the alert text in place of the regular story. Tests: `tests/test_records.py` (broken, tied, official, season running total, no false alert).

@@ -188,8 +188,12 @@ def main(argv=None) -> int:
                        "stories": story_list},
         "source": "nflverse (CC BY 4.0)",
     }
+    recs = records.build(data_out, [s["season"] for s in seasons], cfg, SEASON, weeks)
+    # Record alerts on the home page: anything still pending corrections, plus any
+    # record (pending or official) set in the week the report covers.
+    meta["highlights"]["records"] = [a for a in recs["alerts"]
+                                     if not a["official"] or a["week"] == story_week]
     _write(data_out / "meta.json", meta)
-    recs = records.build(data_out, [s["season"] for s in seasons], cfg, SEASON)
     _write(data_out / "records.json", recs)
     site_build.build(out, noindex=os.environ.get("SOS_NOINDEX", "1") == "1", records=recs)
 

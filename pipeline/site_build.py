@@ -290,11 +290,19 @@ def supers_body(rec: dict) -> str:
                          if r["sabotage_pts"] is not None and s["stat"] != "sabotage_pts" else "")
                 notes = "".join(f'<p class="note">{escape(h["note"])}</p>' for h in r["holders"] if h.get("note"))
                 label = "Single game" if r["scope"] == "game" else "Single season"
-                parts.append(f"""<article class="story rec">
-  <p class="label">{label}</p>
+                al = r.get("alert")
+                badge = (f'<span class="badge {"final" if al["official"] else "provisional"}">{escape(al["title"])}</span>'
+                         if al else "")
+                # While a record is pending, the alert text replaces the story (it carries the same
+                # facts plus the correction deadline). Once official, the regular story returns.
+                pending = al and not al["official"]
+                body = (f'<p class="alert-note">{escape(al["text"])}</p>' if pending
+                        else f'<p class="text">{escape(r["text"])}</p>')
+                parts.append(f"""<article class="story rec{" alert" if al else ""}{" official" if al and al["official"] else ""}">
+  <p class="label">{label} {badge}</p>
   <p class="big"><span class="num">{r["value"]:,}</span> <span class="unit">{escape(r["unit"])}</span>{worth}</p>
   <p class="holder">{_holder_line(h0, r["scope"], is_def)}</p>
-  <p class="text">{escape(r["text"])}</p>
+  {body}
   {tied}{notes}
 </article>""")
             parts.append("</div></div>")
