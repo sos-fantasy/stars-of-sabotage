@@ -61,14 +61,14 @@ def season_totals(data_dir, seasons: list[int]) -> tuple[dict, dict]:
     prow, drow = [], []
     for s in seasons:
         p = json.loads((data_dir / f"scores-{s}.json").read_text())
-        df = pl.DataFrame(p["rows"], schema=p["cols"], orient="row")
+        df = pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None)
         agg = (df.sort("week").group_by("player_id", maintain_order=True)
                .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
                     pl.len().alias("g"), *[pl.col(c).sum() for c in SUM_COLS])
                .with_columns(pl.lit(s).alias("season")))
         prow.append(agg)
         d = json.loads((data_dir / f"defense-{s}.json").read_text())
-        dd = pl.DataFrame(d["rows"], schema=d["cols"], orient="row")
+        dd = pl.DataFrame(d["rows"], schema=d["cols"], orient="row", infer_schema_length=None)
         drow.append(dd.group_by("team").agg(pl.len().alias("g"), pl.col("points_allowed").sum(),
                                             pl.col("sabotage_pts").sum()).with_columns(pl.lit(s).alias("season")))
     pcols = ["season", "player_id", "player_display_name", "position", "team", "g"] + SUM_COLS
@@ -80,13 +80,13 @@ def season_totals(data_dir, seasons: list[int]) -> tuple[dict, dict]:
 
 def career_totals(player_seasons: dict, defense_seasons: dict) -> tuple[dict, dict]:
     """Career sums per player and per defense, so the Career view skips the 18,000-row file."""
-    P = pl.DataFrame(player_seasons["rows"], schema=player_seasons["cols"], orient="row").sort("season")
+    P = pl.DataFrame(player_seasons["rows"], schema=player_seasons["cols"], orient="row", infer_schema_length=None).sort("season")
     sums = [c for c in SUM_COLS]
     C = (P.group_by("player_id", maintain_order=True)
          .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
               pl.len().alias("yrs"), pl.col("g").sum(), *[pl.col(c).sum() for c in sums])
          .sort("sabotage_pts", descending=True))
-    D = pl.DataFrame(defense_seasons["rows"], schema=defense_seasons["cols"], orient="row")
+    D = pl.DataFrame(defense_seasons["rows"], schema=defense_seasons["cols"], orient="row", infer_schema_length=None)
     DC = (D.group_by("team").agg(pl.len().alias("yrs"), pl.col("g").sum(), pl.col("points_allowed").sum(),
                                  pl.col("sabotage_pts").sum()).sort("sabotage_pts", descending=True))
     pcols = ["player_id", "player_display_name", "position", "team", "yrs", "g"] + sums
@@ -158,11 +158,11 @@ def player_files(data_dir, seasons: list[int]) -> tuple[dict[str, dict], dict]:
     frames, ctx = [], []
     for s in seasons:
         p = json.loads((data_dir / f"scores-{s}.json").read_text())
-        frames.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row").with_columns(pl.lit(s).alias("season")))
+        frames.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None).with_columns(pl.lit(s).alias("season")))
         gp = data_dir / f"games-{s}.json"
         if gp.exists():
             g = json.loads(gp.read_text())
-            G = pl.DataFrame(g["rows"], schema=g["cols"], orient="row")
+            G = pl.DataFrame(g["rows"], schema=g["cols"], orient="row", infer_schema_length=None)
             for side, other in (("home_team", "away_team"), ("away_team", "home_team")):
                 ctx.append(G.select(pl.lit(s).alias("season"), "week", pl.col(side).alias("team"),
                                     pl.lit(1 if side == "home_team" else 0).alias("home"),

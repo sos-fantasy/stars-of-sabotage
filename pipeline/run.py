@@ -80,6 +80,11 @@ def build_season(season: int, now: datetime, cfg: dict, data_dir: Path | None, d
     return {"entry": entry, "weeks": weeks, "players": players, "defense": defense, "stats": stats}
 
 
+def _build_entry(season, now, cfg, data_dir, data_out) -> dict:
+    """Worker for past seasons: build, write files, return only the small index entry."""
+    return build_season(season, now, cfg, data_dir, data_out)["entry"]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="dist")
@@ -134,7 +139,7 @@ def main(argv=None) -> int:
         if ok:
             index[season] = entry
         else:
-            print(f"[warn] season {season} missing from previous deploy; run with --backfill")
+            print(f"[info] season {season} is missing files in the previous deploy; it will be rebuilt")
 
     # Self-heal: rebuild any season the previous deploy did not have.
     missing = [s for s in range(FIRST_SEASON, SEASON + 1) if s not in index and s not in todo]
@@ -142,15 +147,18 @@ def main(argv=None) -> int:
         print(f"[backfill] rebuilding {len(missing)} missing seasons: {missing[0]}-{missing[-1]}")
         todo = sorted(set(todo) | set(missing))
 
-    current = None
-    import gc
-    for season in todo:
-        res = build_season(season, now, cfg, data_dir, data_out)
-        index[season] = res["entry"]
-        if season == SEASON:
-            current = res
-        del res
-        gc.collect()
+    # Past seasons build in a fresh process each, so memory is returned to the OS
+    # after every season (a 28-season backfill otherwise climbs past 6 GB).
+    # The current season builds here, since its frames feed meta and stories.
+    import multiprocessing as mp
+    past = [s for s in todo if s != SEASON]
+    if past:
+        ctx = mp.get_context("spawn")
+        with ctx.Pool(1, maxtasksperchild=1) as pool:
+            for entry in pool.starmap(_build_entry, [(s, now, cfg, data_dir, data_out) for s in past]):
+                index[entry["season"]] = entry
+    current = build_season(SEASON, now, cfg, data_dir, data_out)
+    index[SEASON] = current["entry"]
 
     seasons = [index[s] for s in sorted(index, reverse=True)]
     _write(data_out / "seasons.json", seasons)
