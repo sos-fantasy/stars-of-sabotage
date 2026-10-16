@@ -297,7 +297,7 @@ function writeURL(push) {
 
 // ---------- aggregation ----------
 function blankPlayer(r, id) {
-  const a = { id, name: r.player_display_name, pos: r.position, team: r.team, g: 0, total: 0, isDef: false, last: -1 };
+  const a = { id, pid: r.player_id, name: r.player_display_name, pos: r.position, team: r.team, g: 0, total: 0, isDef: false, last: -1 };
   for (const k of PLAYER_ONLY) a[k] = 0;
   return a;
 }
@@ -474,6 +474,7 @@ function render() {
       if (c.key === "rank") return `<td class="rank sticky">${i + 1}</td>`;
       const v = value(r, c);
       const cls = [c.cls || "", c.num ? "num" : "", v === null ? "blank" : v === 0 ? "zero" : ""].join(" ").trim();
+      if (c.key === "name") return `<td class="${cls}"><a class="plink" href="${esc(rowLink(r))}">${esc(r.name)}</a></td>`;
       return `<td class="${cls}">${fmt(v, c)}</td>`;
     }).join("")}</tr>`).join("");
   }
@@ -487,6 +488,12 @@ function render() {
   more.textContent = `Show ${Math.min(PAGE, rows.length - shown.length).toLocaleString()} more`;
   $("#count").textContent = `${rows.length.toLocaleString()} ${isAll() && state.rows === "season" ? "rows" : what}, ${scope}${state.view === "pg" ? ", per game" : ""}.${capped}`;
   document.querySelectorAll("#board [data-sort]").forEach((b) => (b.onclick = (e) => onSort(b.dataset.sort, e.shiftKey)));
+}
+
+function rowLink(r) {
+  const season = isAll() ? (state.rows === "season" ? r.season : null) : state.season;
+  if (r.isDef) return `defenses.html?team=${r.team}${season ? `&season=${season}` : ""}`;
+  return `player.html?id=${encodeURIComponent(r.pid)}${isAll() && state.rows === "career" ? "&season=career" : season ? `&season=${season}` : ""}`;
 }
 
 function downloadCSV() {

@@ -19,13 +19,38 @@ DESCRIPTION = ("Sabotage fantasy football stats: NFL players and defenses ranked
                "sacks, turnovers, missed kicks, and points allowed.")
 
 
-def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = "") -> str:
+NAV = (("board", "./", "Leaderboard"), ("defenses", "defenses.html", "Defenses"),
+       ("supers", "super-stars.html", "Super Stars"), ("method", "method.html", "Scoring"))
+
+HEAD_SEARCH = """<div class="hsearch" data-search role="search">
+    <label class="sr-only" for="q-head">Search players and teams</label>
+    <input id="q-head" type="search" placeholder="Search players, teams" autocomplete="off" spellcheck="false"
+      role="combobox" aria-expanded="false" aria-controls="q-head-list" aria-autocomplete="list">
+    <ul id="q-head-list" role="listbox" class="results" hidden></ul>
+  </div>"""
+
+BIG_SEARCH = """<section class="bigsearch" data-search role="search" aria-label="Find a player or defense">
+  <div class="field">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <label class="sr-only" for="q-big">Search players and teams</label>
+    <input id="q-big" type="search" placeholder="Find a player or defense, any season since 1999" autocomplete="off" spellcheck="false"
+      role="combobox" aria-expanded="false" aria-controls="q-big-list" aria-autocomplete="list">
+    <div class="spos" role="group" aria-label="Limit to a position">
+      <button type="button" data-spos="ALL" aria-pressed="true">All</button><button type="button" data-spos="QB" aria-pressed="false">QB</button><button type="button" data-spos="RB" aria-pressed="false">RB</button><button type="button" data-spos="WR" aria-pressed="false">WR</button><button type="button" data-spos="TE" aria-pressed="false">TE</button><button type="button" data-spos="K" aria-pressed="false">K</button><button type="button" data-spos="DEF" aria-pressed="false">DEF</button>
+    </div>
+  </div>
+  <ul id="q-big-list" role="listbox" class="results" hidden></ul>
+</section>"""
+
+
+def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = "", dv: str = "") -> str:
     robots = '<meta name="robots" content="noindex">\n' if noindex else ""
     nav = "".join(
         f'<a href="{href}"{" aria-current=\"page\"" if key == page else ""}>{label}</a>'
-        for key, href, label in (("board", "./", "Leaderboard"), ("supers", "super-stars.html", "Super Stars"),
-                                 ("method", "method.html", "Scoring"))
+        for key, href, label in NAV
     )
+    search = "" if page == "board" else HEAD_SEARCH   # the home page has the big search instead
+    scripts = '<script type="module" src="assets/common.js"></script>\n' + scripts
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -44,7 +69,7 @@ def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = ""
 <link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/styles.css">
 </head>
-<body class="page-{page}">
+<body class="page-{page}" data-dv="{escape(dv)}">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-head">
   <a class="brand" href="./" aria-label="Stars of Sabotage home">
@@ -52,6 +77,7 @@ def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = ""
     <span class="wordmark">Stars of <em>Sabotage</em></span>
   </a>
   <nav aria-label="Main">{nav}</nav>
+  {search}
 </header>
 <main id="main">
 {body}
@@ -77,6 +103,8 @@ BOARD_BODY = """
     <p class="weekline" id="weekline" aria-live="polite"></p>
   </div>
 </section>
+
+__BIG_SEARCH__
 
 <section class="wreck" id="wreck" aria-labelledby="wreck-title" hidden>
   <h2 id="wreck-title"><span id="wreck-week"></span> wreckage report</h2>
@@ -146,6 +174,70 @@ BOARD_BODY = """
   </div>
   <p class="more-row"><button type="button" id="b-more" class="ghost" hidden>Show more</button></p>
   <p class="hint">Click a column to sort. Click again to flip it, a third time to reset. Shift-click adds a second sort.</p>
+</section>
+"""
+
+
+PLAYER_BODY = """
+<section class="phero">
+  <div>
+    <p class="eyebrow">Player</p>
+    <h1 id="p-name">Loading&hellip;</h1>
+    <p class="pmeta" id="p-meta"></p>
+  </div>
+  <div class="ctl">
+    <label for="p-season">Season</label>
+    <select id="p-season"></select>
+  </div>
+</section>
+<div id="p-body">
+  <div class="next-box" id="p-next" hidden></div>
+  <section class="tiles" id="p-tiles" aria-label="Summary"></section>
+  <section class="tape" aria-labelledby="tape-h">
+    <h2 id="tape-h">Tale of the tape</h2>
+    <p class="hint" id="p-tape-note"></p>
+    <div class="tape-head"><span>Stat</span><span class="r">Count</span><span class="r">Sabotage</span><span class="ph">Position percentile</span></div>
+    <div id="p-tape"></div>
+  </section>
+  <section aria-labelledby="p-chart-title">
+    <h2 id="p-chart-title">By week</h2>
+    <div class="chart-box" id="p-chart"></div>
+  </section>
+  <section aria-labelledby="p-log-title">
+    <h2 id="p-log-title">Game log</h2>
+    <div id="p-log"></div>
+  </section>
+  <section aria-labelledby="splits-h">
+    <h2 id="splits-h">Splits</h2>
+    <div id="p-splits"></div>
+  </section>
+</div>
+"""
+
+DEFENSES_BODY = """
+<section class="hero">
+  <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
+  <div>
+    <p class="eyebrow">Points allowed, Yahoo rule</p>
+    <h1>The <span class="hl">Defenses</span></h1>
+    <p class="lede">Every team defense, ranked by Sabotage points from points allowed. <a href="method.html">How points allowed is counted</a>.</p>
+    <div class="ctl inline"><label for="d-season">Season</label><select id="d-season"></select></div>
+  </div>
+</section>
+<section class="topcard" aria-labelledby="d-top-title">
+  <p class="label">Top five</p>
+  <h2 id="d-top-title">Most generous defenses</h2>
+  <ol class="top5" id="d-top"></ol>
+</section>
+<section aria-labelledby="d-table-h">
+  <h2 id="d-table-h">Season table</h2>
+  <p class="hint">Bucket columns count games in each points-allowed range. Click a header to sort.</p>
+  <div id="d-table"></div>
+</section>
+<section aria-labelledby="d-grid-h">
+  <h2 id="d-grid-h">Week by week</h2>
+  <p class="hint">Points allowed each week. Darker cells earned more Sabotage points (up to 42 for 35 or more allowed).</p>
+  <div id="d-grid"></div>
 </section>
 """
 
@@ -352,37 +444,50 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     shutil.copy2(SITE / "favicon.ico", out / "favicon.ico")
     (out / ".htaccess").write_text(HTACCESS)
     # Version tags: a new release can never pair new HTML with an old cached script.
+    # Leaf modules first, then modules that import them get rewritten and hashed.
     a = out / "assets"
-    foot_v = _hash(a / "foot.js")
-    app = (a / "app.js").read_text().replace('from "./foot.js"', f'from "./foot.js?v={foot_v}"')
-    (a / "app.js").write_text(app)
-    v = {"css": _hash(a / "styles.css"), "app": _hash(a / "app.js"), "foot": foot_v}
-    tag = lambda html: html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
+    v = {"css": _hash(a / "styles.css")}
+    for leaf in ("foot", "common"):
+        v[leaf] = _hash(a / f"{leaf}.js")
+    for mod in ("app", "player", "defenses"):
+        src = (a / f"{mod}.js").read_text()
+        for leaf in ("foot", "common"):
+            src = src.replace(f'from "./{leaf}.js"', f'from "./{leaf}.js?v={v[leaf]}"')
+        (a / f"{mod}.js").write_text(src)
+        v[mod] = _hash(a / f"{mod}.js")
+
+    def tag(html: str) -> str:
+        html = html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
+        for mod in ("foot", "common", "app", "player", "defenses"):
+            html = html.replace(f'src="assets/{mod}.js"', f'src="assets/{mod}.js?v={v[mod]}"')
+        return html
+    import json
     version = escape(load_config()["version"])
     if boot is None:
-        import json
         mp, sp = out / "data" / "meta.json", out / "data" / "seasons.json"
         if mp.exists() and sp.exists():
             boot = {"meta": json.loads(mp.read_text()), "seasons": json.loads(sp.read_text())}
+    dv = (boot or {}).get("meta", {}).get("data_hash", "")
     pre, boot_tag = _boot_tags(boot)
-    (out / "index.html").write_text(tag(layout(
-        "Stars of Sabotage | Sabotage fantasy football leaderboard", BOARD_BODY.replace("{version}", version),
-        page="board", noindex=noindex,
-        scripts=boot_tag + f'<script type="module" src="assets/app.js?v={v["app"]}"></script>')).replace(
-        '<link rel="stylesheet"', pre + f'<link rel="modulepreload" href="assets/foot.js?v={v["foot"]}">\n'
-        + '<link rel="stylesheet"', 1))
+    page = lambda title, body, key, script: tag(layout(
+        title, body, page=key, noindex=noindex, dv=dv,
+        scripts=f'<script type="module" src="assets/{script}.js"></script>' if script else ""))
+
+    home = page("Stars of Sabotage | Sabotage fantasy football leaderboard",
+                BOARD_BODY.replace("{version}", version).replace("__BIG_SEARCH__", BIG_SEARCH), "board", "app")
+    home = home.replace("</script>\n<script type=\"module\" src=\"assets/app.js", "</script>\n" + boot_tag
+                        + "<script type=\"module\" src=\"assets/app.js", 1)
+    home = home.replace('<link rel="stylesheet"', pre + f'<link rel="modulepreload" href="assets/foot.js?v={v["foot"]}">\n'
+                        + '<link rel="stylesheet"', 1)
+    (out / "index.html").write_text(home)
     if records is None:
-        import json
         rp = out / "data" / "records.json"
         records = json.loads(rp.read_text()) if rp.exists() else None
     if records:
-        (out / "super-stars.html").write_text(tag(layout(
-            "Super Stars | Stars of Sabotage", supers_body(records),
-            page="supers", noindex=noindex,
-            scripts=f'<script type="module" src="assets/foot.js?v={v["foot"]}"></script>')))
-    (out / "method.html").write_text(tag(layout(
-        "How Sabotage scoring works | Stars of Sabotage", method_body(), page="method", noindex=noindex,
-        scripts=f'<script type="module" src="assets/foot.js?v={v["foot"]}"></script>')))
+        (out / "super-stars.html").write_text(page("Super Stars | Stars of Sabotage", supers_body(records), "supers", "foot"))
+    (out / "method.html").write_text(page("How Sabotage scoring works | Stars of Sabotage", method_body(), "method", "foot"))
+    (out / "player.html").write_text(page("Player | Stars of Sabotage", PLAYER_BODY, "player", "player"))
+    (out / "defenses.html").write_text(page("Defenses | Stars of Sabotage", DEFENSES_BODY, "defenses", "defenses"))
 
 
 if __name__ == "__main__":

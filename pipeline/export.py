@@ -61,14 +61,14 @@ def season_totals(data_dir, seasons: list[int]) -> tuple[dict, dict]:
     prow, drow = [], []
     for s in seasons:
         p = json.loads((data_dir / f"scores-{s}.json").read_text())
-        df = pl.DataFrame(p["rows"], schema=p["cols"], orient="row")
+        df = pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None)
         agg = (df.sort("week").group_by("player_id", maintain_order=True)
                .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
                     pl.len().alias("g"), *[pl.col(c).sum() for c in SUM_COLS])
                .with_columns(pl.lit(s).alias("season")))
         prow.append(agg)
         d = json.loads((data_dir / f"defense-{s}.json").read_text())
-        dd = pl.DataFrame(d["rows"], schema=d["cols"], orient="row")
+        dd = pl.DataFrame(d["rows"], schema=d["cols"], orient="row", infer_schema_length=None)
         drow.append(dd.group_by("team").agg(pl.len().alias("g"), pl.col("points_allowed").sum(),
                                             pl.col("sabotage_pts").sum()).with_columns(pl.lit(s).alias("season")))
     pcols = ["season", "player_id", "player_display_name", "position", "team", "g"] + SUM_COLS
@@ -80,13 +80,13 @@ def season_totals(data_dir, seasons: list[int]) -> tuple[dict, dict]:
 
 def career_totals(player_seasons: dict, defense_seasons: dict) -> tuple[dict, dict]:
     """Career sums per player and per defense, so the Career view skips the 18,000-row file."""
-    P = pl.DataFrame(player_seasons["rows"], schema=player_seasons["cols"], orient="row").sort("season")
+    P = pl.DataFrame(player_seasons["rows"], schema=player_seasons["cols"], orient="row", infer_schema_length=None).sort("season")
     sums = [c for c in SUM_COLS]
     C = (P.group_by("player_id", maintain_order=True)
          .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
               pl.len().alias("yrs"), pl.col("g").sum(), *[pl.col(c).sum() for c in sums])
          .sort("sabotage_pts", descending=True))
-    D = pl.DataFrame(defense_seasons["rows"], schema=defense_seasons["cols"], orient="row")
+    D = pl.DataFrame(defense_seasons["rows"], schema=defense_seasons["cols"], orient="row", infer_schema_length=None)
     DC = (D.group_by("team").agg(pl.len().alias("yrs"), pl.col("g").sum(), pl.col("points_allowed").sum(),
                                  pl.col("sabotage_pts").sum()).sort("sabotage_pts", descending=True))
     pcols = ["player_id", "player_display_name", "position", "team", "yrs", "g"] + sums
@@ -130,3 +130,90 @@ def highlights(season: int, week: int, players: pl.DataFrame, stats: pl.DataFram
                        (pl.col("pts_fumble") + pl.col("pts_fumble_lost")).alias("pts_fumbles")))
     d = defenses.filter(pl.col("week") == week)
     return stories.build(week, p.to_dicts(), d.to_dicts(), season)
+
+
+# ---------- Phase 2: game context, per-player files, search index ----------
+
+PCT_MIN_GAMES = 4
+PCT_STATS = ["sabotage_pts", "n_incomplete", "n_sacks", "n_ints", "n_pick_sixes", "n_fumbles", "n_fumbles_lost",
+             "n_fg_missed", "n_pat_missed", "n_carries", "n_receptions"]
+
+GAME_COLS = ["week", "game_id", "gameday", "gametime", "home_team", "away_team", "home_score", "away_score",
+             "roof", "wind", "temp"]
+
+
+def games(schedules: pl.DataFrame) -> dict:
+    """Game context per season: who was home, roof type, recorded wind and temperature."""
+    g = schedules.filter(pl.col("game_type") == "REG").sort(["week", "gameday", "gametime"])
+    return compact(g.select([pl.col(c) for c in GAME_COLS]), GAME_COLS)
+
+
+def _indoor(roof: str | None) -> bool | None:
+    if roof is None:
+        return None
+    return roof in ("dome", "closed")
+
+
+def player_files(data_dir, seasons: list[int]) -> tuple[dict[str, dict], dict]:
+    """One file per player with every week of his history plus game context, season totals,
+    and his rank among his position each season; and a compact search index."""
+    from pathlib import Path
+    data_dir = Path(data_dir)
+    frames, ctx = [], []
+    for s in seasons:
+        p = json.loads((data_dir / f"scores-{s}.json").read_text())
+        frames.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None).with_columns(pl.lit(s).alias("season")))
+        gp = data_dir / f"games-{s}.json"
+        if gp.exists():
+            g = json.loads(gp.read_text())
+            G = pl.DataFrame(g["rows"], schema=g["cols"], orient="row", infer_schema_length=None)
+            for side, other in (("home_team", "away_team"), ("away_team", "home_team")):
+                ctx.append(G.select(pl.lit(s).alias("season"), "week", pl.col(side).alias("team"),
+                                    pl.lit(1 if side == "home_team" else 0).alias("home"),
+                                    pl.col("roof"), pl.col("wind").cast(pl.Float64), pl.col("gameday")))
+    P = pl.concat(frames)
+    if ctx:
+        C = pl.concat(ctx).unique(["season", "week", "team"])
+        P = P.join(C, on=["season", "week", "team"], how="left")
+    else:
+        P = P.with_columns(pl.lit(None).alias("home"), pl.lit(None).alias("roof"),
+                           pl.lit(None, dtype=pl.Float64).alias("wind"), pl.lit(None).alias("gameday"))
+    # season totals and position rank (QB, RB incl. FB, WR, TE, K)
+    S = (P.sort(["season", "week"]).group_by(["season", "player_id"], maintain_order=True)
+         .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
+              pl.len().alias("g"), *[pl.col(c).sum() for c in SUM_COLS])
+         .with_columns(pl.when(pl.col("position") == "FB").then(pl.lit("RB")).otherwise(pl.col("position")).alias("pg"))
+         .with_columns(pl.col("sabotage_pts").rank("min", descending=True).over(["season", "pg"]).cast(pl.Int64).alias("pos_rank"),
+                       pl.len().over(["season", "pg"]).alias("pos_n")))
+    # Percentiles vs position peers that season, on per-game rates, among players with
+    # at least 4 games (so a one-game cameo does not set the curve). 100 = most sabotage.
+    S = S.with_columns((pl.col("g") >= PCT_MIN_GAMES).alias("_qual"),
+                       *[(pl.col(c) / pl.col("g")).alias(f"_r_{c}") for c in PCT_STATS])
+    Q = S.filter(pl.col("_qual"))
+    pct_frames = []
+    for c in PCT_STATS:
+        # Share of qualified peers at or below this rate. A zero is always 0, so a stat
+        # the whole position never records (a QB's missed kicks) does not read as 100.
+        r = pl.col(f"_r_{c}")
+        pct = (r.rank("max").over(["season", "pg"]) - 1) / (pl.len().over(["season", "pg"]) - 1).clip(lower_bound=1) * 100
+        pct_frames.append(Q.select("season", "player_id",
+                                   pl.when(r > 0).then(pct.round(0)).otherwise(0).cast(pl.Int64).alias(f"pct_{c}")))
+    for f in pct_frames:
+        S = S.join(f, on=["season", "player_id"], how="left")
+    S = S.drop([c for c in S.columns if c.startswith("_")])
+    week_cols = ["season", "week", "team", "opponent_team", "home", "roof", "wind", "gameday"] + SUM_COLS
+    season_cols = ["season", "team", "position", "g", "pos_rank", "pos_n"] + SUM_COLS + [f"pct_{c}" for c in PCT_STATS]
+    out, index = {}, []
+    for pid, wk in P.sort(["season", "week"]).group_by("player_id", maintain_order=True):
+        pid = pid[0]
+        ss = S.filter(pl.col("player_id") == pid).sort("season")
+        last = ss.row(-1, named=True)
+        out[pid] = {
+            "id": pid, "name": last["player_display_name"], "position": last["position"], "team": last["team"],
+            "first": ss["season"].min(), "last": ss["season"].max(),
+            "seasons": compact(ss, season_cols), "weeks": compact(wk, week_cols),
+        }
+        index.append([pid, last["player_display_name"], last["position"], last["team"], ss["season"].min(),
+                      ss["season"].max(), int(ss["sabotage_pts"].sum())])
+    index.sort(key=lambda r: -r[6])
+    return out, {"cols": ["id", "name", "pos", "team", "first", "last", "career_pts"], "rows": index}

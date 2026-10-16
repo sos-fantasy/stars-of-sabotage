@@ -188,9 +188,9 @@ def _load(data_dir: Path, seasons: list[int]) -> tuple[pl.DataFrame, pl.DataFram
     P, D = [], []
     for s in seasons:
         p = json.loads((data_dir / f"scores-{s}.json").read_text())
-        P.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row").with_columns(pl.lit(s).alias("season")))
+        P.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None).with_columns(pl.lit(s).alias("season")))
         d = json.loads((data_dir / f"defense-{s}.json").read_text())
-        D.append(pl.DataFrame(d["rows"], schema=d["cols"], orient="row").with_columns(pl.lit(s).alias("season")))
+        D.append(pl.DataFrame(d["rows"], schema=d["cols"], orient="row", infer_schema_length=None).with_columns(pl.lit(s).alias("season")))
     return pl.concat(P), pl.concat(D)
 
 
