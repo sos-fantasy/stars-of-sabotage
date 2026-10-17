@@ -19,7 +19,7 @@ DESCRIPTION = ("Sabotage fantasy football stats: NFL players and defenses ranked
                "sacks, turnovers, missed kicks, and points allowed.")
 
 
-NAV = (("board", "./", "Leaderboard"), ("defenses", "defenses.html", "Defenses"),
+NAV = (("board", "./", "Leaderboard"), ("compare", "compare.html", "Compare"), ("defenses", "defenses.html", "Defenses"),
        ("supers", "super-stars.html", "Super Stars"), ("method", "method.html", "Scoring"))
 
 HEAD_SEARCH = """<div class="hsearch" data-search role="search">
@@ -185,9 +185,12 @@ PLAYER_BODY = """
     <h1 id="p-name">Loading&hellip;</h1>
     <p class="pmeta" id="p-meta"></p>
   </div>
-  <div class="ctl">
-    <label for="p-season">Season</label>
-    <select id="p-season"></select>
+  <div class="pctl">
+    <div class="ctl">
+      <label for="p-season">Season</label>
+      <select id="p-season"></select>
+    </div>
+    <a class="btn" id="p-compare" href="compare.html">Compare</a>
   </div>
 </section>
 <div id="p-body">
@@ -210,6 +213,52 @@ PLAYER_BODY = """
   <section aria-labelledby="splits-h">
     <h2 id="splits-h">Splits</h2>
     <div id="p-splits"></div>
+  </section>
+</div>
+"""
+
+COMPARE_BODY = """
+<section class="phero">
+  <div>
+    <p class="eyebrow">Compare players</p>
+    <h1>Accomplishments</h1>
+    <p class="pmeta">Up to four players, one season or whole careers, side by side.</p>
+  </div>
+</section>
+<section class="picker" aria-label="Players">
+  <ul class="cmp-chips" id="c-chips"></ul>
+  <div class="hsearch cpick" id="c-pick" role="search">
+    <label class="sr-only" for="q-cmp">Add a player</label>
+    <input id="q-cmp" type="search" placeholder="Add a player" autocomplete="off" spellcheck="false"
+      role="combobox" aria-expanded="false" aria-controls="q-cmp-list" aria-autocomplete="list">
+    <ul id="q-cmp-list" role="listbox" class="results" hidden></ul>
+  </div>
+  <p class="hint" id="c-pick-hint"></p>
+  <p class="hint" id="c-try">Or try <a href="compare.html?ids=00-0031503,00-0023682&amp;season=career">Jameis Winston vs Ryan Fitzpatrick, careers</a>. On the <a href="./">leaderboard</a>, the + next to any name adds that player here.</p>
+</section>
+<div id="c-body" hidden>
+  <form class="controls" onsubmit="return false" aria-label="Range">
+    <div class="ctl"><label for="c-season">Season</label><select id="c-season"></select></div>
+    <div class="ctl" id="c-weeks"><label for="c-from">Weeks</label>
+      <div class="pair"><select id="c-from"></select><span>to</span><label class="sr-only" for="c-to">To week</label><select id="c-to"></select>
+        <button type="button" id="c-full" class="toggle" aria-pressed="true">Full season</button></div></div>
+    <fieldset class="ctl seg"><legend>Show</legend><div class="segbtns">
+      <button type="button" data-cview="tot" aria-pressed="true">Totals</button>
+      <button type="button" data-cview="pg" aria-pressed="false">Per game</button></div></fieldset>
+  </form>
+  <p class="notice" id="c-mixed" hidden>These players play different positions, and each position scores different events. Compare the rows that apply to both before reading much into the totals.</p>
+  <p class="hint" id="c-scope"></p>
+  <section aria-labelledby="c-table-h">
+    <h2 id="c-table-h">Side by side</h2>
+    <div id="c-table"></div>
+  </section>
+  <section aria-labelledby="c-chart-title">
+    <h2 id="c-chart-title">By week</h2>
+    <div class="chart-box" id="c-chart"></div>
+  </section>
+  <section aria-labelledby="c-break-h">
+    <h2 id="c-break-h">Where the points come from</h2>
+    <div id="c-break"></div>
   </section>
 </div>
 """
@@ -447,18 +496,17 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     # Leaf modules first, then modules that import them get rewritten and hashed.
     a = out / "assets"
     v = {"css": _hash(a / "styles.css")}
-    for leaf in ("foot", "common"):
-        v[leaf] = _hash(a / f"{leaf}.js")
-    for mod in ("app", "player", "defenses"):
+    # In dependency order: each module's imports are already hashed when it is rewritten.
+    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare"):
         src = (a / f"{mod}.js").read_text()
-        for leaf in ("foot", "common"):
-            src = src.replace(f'from "./{leaf}.js"', f'from "./{leaf}.js?v={v[leaf]}"')
+        for dep in [d for d in v if d != "css"]:
+            src = src.replace(f'from "./{dep}.js"', f'from "./{dep}.js?v={v[dep]}"')
         (a / f"{mod}.js").write_text(src)
         v[mod] = _hash(a / f"{mod}.js")
 
     def tag(html: str) -> str:
         html = html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
-        for mod in ("foot", "common", "app", "player", "defenses"):
+        for mod in ("foot", "common", "app", "player", "defenses", "compare"):
             html = html.replace(f'src="assets/{mod}.js"', f'src="assets/{mod}.js?v={v[mod]}"')
         return html
     import json
@@ -488,6 +536,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     (out / "method.html").write_text(page("How Sabotage scoring works | Stars of Sabotage", method_body(), "method", "foot"))
     (out / "player.html").write_text(page("Player | Stars of Sabotage", PLAYER_BODY, "player", "player"))
     (out / "defenses.html").write_text(page("Defenses | Stars of Sabotage", DEFENSES_BODY, "defenses", "defenses"))
+    (out / "compare.html").write_text(page("Compare players | Stars of Sabotage", COMPARE_BODY, "compare", "compare"))
 
 
 if __name__ == "__main__":
