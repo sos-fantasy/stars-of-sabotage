@@ -478,3 +478,18 @@ Leaderboard player names link to player pages; DEF rows link to the Defenses pag
 Hand check (Jameis Winston, 2026 Week 5 at WAS): 21 incompletions x 2 = 42, 2 sacks x 5 = 10, 1 fumble 7 + lost 10 = 17, 5 carries = 5. Total 74, matching the chart and game log.
 
 New data files: `games-YYYY.json` (schedule context per season), `players/<id>.json` (one per player), `search.json`.
+
+## 26. Compare page (October 17, 2026)
+
+Live on /preview October 17 at `compare.html?ids=<id>,<id>&season=<year|career>&from=&to=&view=pg`. Page title Accomplishments, menu label Compare.
+
+- Up to 4 players. Each keeps his color (chart slots 1 to 4) when another is removed.
+- One season and week range, or Career, shared by everyone. Totals or per game.
+- Side-by-side table of every scored stat (count, with the points it produced); the most points in each row is marked yellow, plus hidden "(most)" text for screen readers.
+- Lines by week (by season in Career view) with a hover or tap tooltip listing every player, and a breakdown by event group on one scale.
+- A note appears when positions differ.
+- Entry points: Compare in the menu, a Compare button on player pages, and a + on leaderboard rows that fills a compare bar.
+
+Hand checks: Winston 2019 totals 1,367 (492 + 235 + 300 + 147 + 84 + 50 + 59); Barkley career 2,711; Tucker 2019 kicking 46 = two missed PATs (32) + one missed 40 to 49 yard field goal (14).
+
+Phase 2 exit criteria: every page works on desktop and phone (checked at 1280 and 390 px). The "stranger finds and compares two players without instructions" test still needs a real person who has not seen the site.
