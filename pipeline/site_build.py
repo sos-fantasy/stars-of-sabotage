@@ -221,7 +221,7 @@ COMPARE_BODY = """
 <section class="phero">
   <div>
     <p class="eyebrow">Compare players</p>
-    <h1>Accomplishments</h1>
+    <h1>Battlefield</h1>
     <p class="pmeta">Up to four players, one season or whole careers, side by side.</p>
   </div>
 </section>

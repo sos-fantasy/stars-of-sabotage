@@ -481,7 +481,7 @@ New data files: `games-YYYY.json` (schedule context per season), `players/<id>.j
 
 ## 26. Compare page (October 17, 2026)
 
-Live on /preview October 17 at `compare.html?ids=<id>,<id>&season=<year|career>&from=&to=&view=pg`. Page title Accomplishments, menu label Compare.
+Live on /preview October 17 at `compare.html?ids=<id>,<id>&season=<year|career>&from=&to=&view=pg`. Page heading Battlefield (owner, October 17: a versus theme for the compare page; Accomplishments stays as the stat section on player pages). Menu label Compare.
 
 - Up to 4 players. Each keeps his color (chart slots 1 to 4) when another is removed.
 - One season and week range, or Career, shared by everyone. Totals or per game.
