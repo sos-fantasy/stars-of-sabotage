@@ -1,33 +1,6 @@
-import { $, esc, toObjs, dataVersion, getJSON, NICK } from "./common.js?v=e89b39acdc";
+import { $, esc, toObjs, dataVersion, getJSON, NICK } from "./common.js?v=dd86e435db";
+import { STAT, BY_POS, POS_NAME, GROUPS, fmt, sum, niceMax, wireTips, short, statPoints } from "./stats.js?v=1269168640";
 import { loadMeta, fillFooter } from "./foot.js?v=949d944f7b";
-
-// Scored stats shown per position, in display order. Each: count field, points field, label.
-const STAT = {
-  inc: { n: "n_incomplete", p: "pts_incomplete", label: "Incomplete passes", pct: "pct_n_incomplete" },
-  sack: { n: "n_sacks", p: "pts_sacks", label: "Sacks taken", pct: "pct_n_sacks" },
-  int: { n: "n_ints", p: "pts_int", label: "Interceptions", pct: "pct_n_ints" },
-  pk6: { n: "n_pick_sixes", p: "pts_pick_six", label: "Pick sixes (bonus)", pct: "pct_n_pick_sixes" },
-  fum: { n: "n_fumbles", p: "pts_fumble", label: "Fumbles", pct: "pct_n_fumbles" },
-  lost: { n: "n_fumbles_lost", p: "pts_fumble_lost", label: "Fumbles lost (bonus)", pct: "pct_n_fumbles_lost" },
-  car: { n: "n_carries", p: "pts_carries", label: "Rushing attempts", pct: "pct_n_carries" },
-  rec: { n: "n_receptions", p: "pts_receptions", label: "Receptions", pct: "pct_n_receptions" },
-  fgx: { n: "n_fg_missed", p: null, label: "Field goals missed or blocked", pct: "pct_n_fg_missed" },
-  patx: { n: "n_pat_missed", p: null, label: "Extra points missed or blocked", pct: "pct_n_pat_missed" },
-};
-const BY_POS = {
-  QB: ["inc", "sack", "int", "pk6", "fum", "lost", "car"],
-  RB: ["car", "rec", "fum", "lost"], FB: ["car", "rec", "fum", "lost"],
-  WR: ["rec", "car", "fum", "lost"], TE: ["rec", "car", "fum", "lost"],
-  K: ["fgx", "patx"],
-};
-const POS_NAME = { QB: "QBs", RB: "RBs", FB: "RBs", WR: "WRs", TE: "TEs", K: "kickers" };
-// Chart groups (validated categorical slots 1 to 4 on the dark surface).
-const GROUPS = [
-  { key: "pass", label: "Passing misfires", color: "var(--s1)", f: (r) => r.pts_incomplete + r.pts_sacks },
-  { key: "turn", label: "Turnovers", color: "var(--s2)", f: (r) => r.pts_int + r.pts_pick_six + r.pts_fumble + r.pts_fumble_lost },
-  { key: "vol", label: "Touches", color: "var(--s3)", f: (r) => r.pts_carries + r.pts_receptions },
-  { key: "kick", label: "Missed kicks", color: "var(--s4)", f: (r) => r.pts_kicking },
-];
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
@@ -55,6 +28,8 @@ async function init() {
     history.replaceState(null, "", u);
     render();
   };
+  const cmp = () => { $("#p-compare").href = `compare.html?ids=${encodeURIComponent(id)}&season=${sel.value}`; };
+  sel.addEventListener("change", cmp); cmp();
   $("#p-name").textContent = P.name;
   $("#p-meta").innerHTML = `${esc(P.position)} · <span title="${esc(NICK[P.team] || "")}">${esc(P.team)}</span> · ${P.first === P.last ? P.first : `${P.first} to ${P.last}`}`;
   render();
@@ -66,8 +41,6 @@ function notFound() {
   $("#p-body").hidden = true;
 }
 
-const fmt = (v, d = 0) => (v === null || v === undefined ? "" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }));
-const sum = (rows, k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
 
 function render() {
   const sv = $("#p-season").value;
@@ -100,9 +73,7 @@ function render() {
   $("#p-tape").innerHTML = keys.map((k) => {
     const s = STAT[k];
     const n = sum(wk, s.n);
-    let pts = s.p ? sum(wk, s.p) : null;
-    if (k === "fgx") pts = sum(wk, "pts_kicking") - sum(wk, "n_pat_missed") * 16;
-    if (k === "patx") pts = sum(wk, "n_pat_missed") * 16;
+    const pts = statPoints(wk, k);
     const pct = qualified ? srow[s.pct] : null;
     const bar = pct === null || pct === undefined ? "" :
       `<div class="bar" role="img" aria-label="${pct}th percentile"><span style="width:${Math.max(2, pct)}%"></span></div><span class="pct">${pct}<small>th</small></span>`;
@@ -127,7 +98,6 @@ function render() {
 
 // ---------- charts (inline SVG, hand-drawn to match the site) ----------
 const W = 760, H = 260, M = { t: 16, r: 12, b: 34, l: 40 };
-function niceMax(v) { if (v <= 10) return 10; const p = 10 ** Math.floor(Math.log10(v)); return Math.ceil(v / p) * p; }
 
 function weekChart(wk, season) {
   const maxWeek = Math.max(18, ...wk.map((w) => w.week));
@@ -194,29 +164,6 @@ function seasonChart() {
   return s + `</svg>`;
 }
 
-function wireTips(box) {
-  let tip = box.querySelector(".tip");
-  if (!tip) { tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip); }
-  box.querySelectorAll(".hit").forEach((h) => {
-    const show = () => {
-      tip.textContent = h.dataset.tip;
-      tip.hidden = false;
-      const b = h.getBoundingClientRect(), c = box.getBoundingClientRect();
-      // beside the column, never on top of the bar
-      const w = tip.offsetWidth || 230, right = b.right - c.left + 6;
-      const sx = box.scrollLeft;
-      tip.style.left = `${sx + (right + w <= c.width ? right : Math.max(0, b.left - c.left - w - 6))}px`;
-      tip.style.top = `${b.top - c.top + 6}px`;
-      h.classList.add("on");
-    };
-    const hide = () => { tip.hidden = true; h.classList.remove("on"); };
-    // Mouse shows on hover; a tap toggles, so a touch never flashes and vanishes.
-    h.addEventListener("pointerenter", (e) => e.pointerType === "mouse" && show());
-    h.addEventListener("pointerleave", (e) => e.pointerType === "mouse" && hide());
-    h.addEventListener("click", () => { box.querySelectorAll(".hit.on").forEach((x) => x !== h && x.classList.remove("on")); show(); });
-  });
-}
-
 // ---------- tables ----------
 const venue = (r) => {
   if (r.roof === "dome" || r.roof === "closed") return "Indoors";
@@ -231,11 +178,6 @@ function gameLog(wk, keys) {
     `<tr><td>${r.week}</td><td>${r.home === 0 ? "@" : "vs"} ${esc(r.opponent_team)}</td><td class="dim">${esc(venue(r))}</td>
      ${cols.map((c) => `<td class="num${r[c.n] ? "" : " zero"}">${r[c.n]}</td>`).join("")}<td class="num total">${r.sabotage_pts}</td></tr>`).join("");
   return `<div class="table-wrap plain"><table>${head}${body}</table></div>`;
-}
-function short(label) {
-  return { "Incomplete passes": "Inc", "Sacks taken": "Sk", Interceptions: "INT", "Pick sixes (bonus)": "Pk6", Fumbles: "Fum",
-    "Fumbles lost (bonus)": "Lost", "Rushing attempts": "Car", Receptions: "Rec", "Field goals missed or blocked": "FGx",
-    "Extra points missed or blocked": "PATx" }[label] || label;
 }
 function seasonTable() {
   const head = `<tr><th>Season</th><th>Team</th><th class="num">G</th><th class="num total">Pts</th><th class="num">Per G</th><th class="num">Pos rank</th></tr>`;

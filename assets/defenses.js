@@ -1,4 +1,4 @@
-import { $, esc, toObjs, dataVersion, getJSON, NICK, CITY } from "./common.js?v=e89b39acdc";
+import { $, esc, toObjs, dataVersion, getJSON, NICK, CITY } from "./common.js?v=dd86e435db";
 import { loadMeta, fillFooter } from "./foot.js?v=949d944f7b";
 
 const BUCKETS = ["0", "1-6", "7-13", "14-20", "21-27", "28-34", "35+"];
