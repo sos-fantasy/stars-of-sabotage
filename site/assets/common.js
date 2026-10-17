@@ -73,7 +73,8 @@ const hrefFor = (e) => (e.kind === "team" ? `defenses.html?team=${e.id}` : `play
 const years = (e) => (e.first === e.last ? `${e.first}` : `${e.first} to ${e.last}`);
 
 // Wires any [data-search] block: an input, a listbox, and optional position chips.
-export function initSearch(root) {
+// opts.onPick(entry) replaces navigation (the compare picker); opts.playersOnly hides defenses.
+export function initSearch(root, opts = {}) {
   const input = $("input", root);
   const list = $("[role=listbox]", root);
   const chips = root.querySelectorAll("[data-spos]");
@@ -91,7 +92,7 @@ export function initSearch(root) {
   const run = async () => {
     const idx = await loadIndex().catch(() => null);
     if (!idx) return;
-    items = rank(idx, input.value, pos);
+    items = rank(idx, input.value, pos).filter((e) => !(opts.playersOnly && e.kind === "team") && !(opts.skip && opts.skip(e)));
     active = items.length ? 0 : -1;
     if (!input.value.trim()) return close();
     paint();
@@ -103,8 +104,18 @@ export function initSearch(root) {
     if (list.hidden && e.key !== "Enter") return;
     if (e.key === "ArrowDown") { e.preventDefault(); active = Math.min(items.length - 1, active + 1); paint(); }
     else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(0, active - 1); paint(); }
-    else if (e.key === "Enter") { e.preventDefault(); if (items[active]) location.href = hrefFor(items[active]); }
+    else if (e.key === "Enter") { e.preventDefault(); if (items[active]) pick(items[active]); }
     else if (e.key === "Escape") { close(); }
+  });
+  const pick = (e) => {
+    if (!opts.onPick) { location.href = hrefFor(e); return; }
+    opts.onPick(e); input.value = ""; close();
+  };
+  list.addEventListener("click", (ev) => {
+    const li = ev.target.closest("li[role=option]");
+    if (!li || !opts.onPick) return;
+    ev.preventDefault();
+    pick(items[+li.id.slice(list.id.length + 1)]);
   });
   document.addEventListener("click", (e) => { if (!root.contains(e.target)) close(); });
   chips.forEach((c) => c.addEventListener("click", () => {
@@ -115,4 +126,4 @@ export function initSearch(root) {
   }));
 }
 
-document.querySelectorAll("[data-search]").forEach(initSearch);
+document.querySelectorAll("[data-search]").forEach((el) => initSearch(el));

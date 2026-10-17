@@ -97,6 +97,7 @@ async function init() {
   fillFooter(DATA.meta);
   renderStories(DATA.meta);
   setupControls();
+  initTray();
   readURL();
   await go();
   window.addEventListener("popstate", async () => { readURL(); await go(null); });
@@ -474,7 +475,8 @@ function render() {
       if (c.key === "rank") return `<td class="rank sticky">${i + 1}</td>`;
       const v = value(r, c);
       const cls = [c.cls || "", c.num ? "num" : "", v === null ? "blank" : v === 0 ? "zero" : ""].join(" ").trim();
-      if (c.key === "name") return `<td class="${cls}"><a class="plink" href="${esc(rowLink(r))}">${esc(r.name)}</a></td>`;
+      if (c.key === "name") return `<td class="${cls}"><a class="plink" href="${esc(rowLink(r))}">${esc(r.name)}</a>${r.isDef ? "" :
+        `<button type="button" class="cadd" data-cmp="${esc(r.pid)}" data-name="${esc(r.name)}" aria-pressed="${tray.has(r.pid)}" title="Add to compare" aria-label="Compare ${esc(r.name)}">+</button>`}</td>`;
       return `<td class="${cls}">${fmt(v, c)}</td>`;
     }).join("")}</tr>`).join("");
   }
@@ -488,6 +490,40 @@ function render() {
   more.textContent = `Show ${Math.min(PAGE, rows.length - shown.length).toLocaleString()} more`;
   $("#count").textContent = `${rows.length.toLocaleString()} ${isAll() && state.rows === "season" ? "rows" : what}, ${scope}${state.view === "pg" ? ", per game" : ""}.${capped}`;
   document.querySelectorAll("#board [data-sort]").forEach((b) => (b.onclick = (e) => onSort(b.dataset.sort, e.shiftKey)));
+  if (tray.size) paintTray();
+}
+
+// ---------- compare tray: pick up to 4 players from the table ----------
+const tray = new Map();
+function initTray() {
+  const el = document.createElement("div");
+  el.id = "cmp-tray"; el.className = "tray"; el.hidden = true;
+  el.setAttribute("role", "region"); el.setAttribute("aria-label", "Players to compare");
+  document.body.appendChild(el);
+  $("#board tbody").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cmp]");
+    if (!b) return;
+    const id = b.dataset.cmp;
+    if (tray.has(id)) tray.delete(id); else if (tray.size < 4) tray.set(id, b.dataset.name);
+    b.setAttribute("aria-pressed", String(tray.has(id)));
+    paintTray();
+  });
+  el.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-untray]");
+    if (b) { tray.delete(b.dataset.untray); paintTray(); render(); }
+    if (e.target.closest("[data-clear]")) { tray.clear(); paintTray(); render(); }
+  });
+}
+function paintTray() {
+  const el = $("#cmp-tray");
+  el.hidden = tray.size === 0;
+  const season = isAll() ? "career" : state.season;
+  const href = `compare.html?ids=${[...tray.keys()].map(encodeURIComponent).join(",")}&season=${season}`;
+  el.innerHTML = `<div class="tray-in"><span class="lbl">Compare</span>${[...tray].map(([id, n]) =>
+    `<span class="tchip">${esc(n)}<button type="button" data-untray="${esc(id)}" aria-label="Remove ${esc(n)}">×</button></span>`).join("")}
+    <span class="tnote">${tray.size < 2 ? "Pick one more with +" : tray.size === 4 ? "Four is the limit" : ""}</span>
+    <button type="button" class="tclear" data-clear>Clear</button>
+    <a class="btn${tray.size < 2 ? " off" : ""}" href="${href}">Compare ${tray.size}</a></div>`;
 }
 
 function rowLink(r) {
