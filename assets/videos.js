@@ -4,7 +4,7 @@ import { loadMeta, fillFooter } from "./foot.js?v=949d944f7b";
 // Weekly worst-plays videos. The page shows a thumbnail first and only loads YouTube's
 // player (from the privacy-enhanced youtube-nocookie.com domain) when someone presses play.
 const params = new URLSearchParams(location.search);
-let meta = null, list = [];
+let meta = null, list = [], onSite = true;
 
 const thumb = (id) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 const watch = (id) => `https://www.youtube.com/watch?v=${id}`;
@@ -13,7 +13,9 @@ const key = (v) => `${v.season}-${v.week}`;
 async function init() {
   try {
     meta = await loadMeta();
-    list = (await getJSON(`data/videos.json?v=${meta.data_hash}-${Math.floor(Date.now() / 300000)}`)).videos || [];
+    const d = await getJSON(`data/videos.json?v=${meta.data_hash}-${Math.floor(Date.now() / 300000)}`);
+    list = d.videos || [];
+    onSite = d.play_on_site !== false;
   } catch (e) {
     list = [];
   }
@@ -59,10 +61,10 @@ async function init() {
 function card(v) {
   const title = esc(v.title || `${v.season} week ${v.week}`);
   const by = v.channel ? `<p class="vby">From ${esc(v.channel)} on YouTube</p>` : "";
-  if (v.embed === "no") {
+  if (v.embed === "no" || !onSite) {
     return `<article class="vcard"><a class="vframe off" href="${watch(v.id)}" target="_blank" rel="noopener">
         <img src="${thumb(v.id)}" alt="" width="480" height="360"><span class="vplay" aria-hidden="true"></span>
-        <span class="vnote">The uploader does not allow this video on other sites. Opens on YouTube.</span></a>
+        <span class="vnote">${onSite ? "The uploader does not allow this video on other sites." : "The NFL only lets these videos play on YouTube."} Opens in a new tab.</span></a>
       <h2 class="vtitle">${title}</h2>${by}</article>`;
   }
   return `<article class="vcard"><div class="vframe">
