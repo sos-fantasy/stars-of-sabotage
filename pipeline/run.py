@@ -210,7 +210,7 @@ def main(argv=None) -> int:
     # Worst-plays videos. Network trouble never fails the run: earlier videos carry forward.
     prev_videos = _read_json(prev_data / "videos.json", {}) if prev_data else {}
     try:
-        vids = videos.build(SEASON, export_rows(_read_json(data_out / f"games-{SEASON}.json")),
+        vids = videos.build(SEASON, lambda s: export_rows(_read_json(data_out / f"games-{s}.json")),
                             prev_videos.get("videos", []), videos.load_sources(), videos.read_manual())
     except Exception as e:
         print(f"[videos] skipped: {e}")

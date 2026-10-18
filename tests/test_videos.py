@@ -120,3 +120,15 @@ def test_play_on_site_flag(tmp_path):
     assert videos.play_on_site(f) is True
     assert videos.play_on_site(tmp_path / "missing.yml") is True
     assert videos.play_on_site() is False   # the live config, set Oct 18, 2026
+
+
+def test_past_season_playlist_needs_week_in_title():
+    # 2024 schedule stub: weeks 1 and 2.
+    g24 = [{"week": 1, "gameday": "2024-09-08"}, {"week": 2, "gameday": "2024-09-15"}]
+    xml = feed(("W1W1W1W1W1W", "The WORST Plays of Week 1", "2024-09-10T15:00:00+00:00"),
+               ("WCWCWCWCWCW", "The WORST Plays of Wild Card Weekend", "2025-01-14T15:00:00+00:00"),
+               ("SSSSSSSSSSS", "The WORST Plays of the 2024 NFL Season!", "2025-02-20T15:00:00+00:00"),
+               ("W2W2W2W2W2W", "The WORST Plays of Week 2", "2024-09-17T15:00:00+00:00"))
+    src = [{"name": "2024", "playlist_id": "PL24", "season": 2024}]
+    out = videos.build(2026, lambda s: g24 if s == 2024 else GAMES, [], src, [], get=fake_get(xml), log=lambda *_: None)
+    assert [(v["season"], v["week"], v["id"]) for v in out] == [(2024, 2, "W2W2W2W2W2W"), (2024, 1, "W1W1W1W1W1W")]

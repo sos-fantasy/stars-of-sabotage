@@ -268,7 +268,7 @@ VIDEO_BODY = """
   <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
   <div>
     <p class="eyebrow">Worst plays of the week</p>
-    <h1>The <span class="hl">Lowlights</span></h1>
+    <h1>Reel Good <span class="hl">Sabotage</span></h1>
     <p class="lede">The week's worst plays on video, next to the players who scored the most Sabotage points.</p>
     <div class="ctl inline" id="v-pick"><label for="v-week">Week</label><select id="v-week"></select></div>
   </div>
@@ -558,7 +558,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     (out / "player.html").write_text(page("Player | Stars of Sabotage", PLAYER_BODY, "player", "player"))
     (out / "defenses.html").write_text(page("Defenses | Stars of Sabotage", DEFENSES_BODY, "defenses", "defenses"))
     (out / "compare.html").write_text(page("Compare players | Stars of Sabotage", COMPARE_BODY, "compare", "compare"))
-    (out / "video.html").write_text(page("Worst plays of the week | Stars of Sabotage", VIDEO_BODY, "video", "videos"))
+    (out / "video.html").write_text(page("Reel Good Sabotage | Stars of Sabotage", VIDEO_BODY, "video", "videos"))
 
 
 if __name__ == "__main__":

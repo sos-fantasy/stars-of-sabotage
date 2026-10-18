@@ -127,10 +127,13 @@ def read_manual(path: Path = ROOT / "config" / "videos_manual.csv") -> list[dict
     return rows
 
 
-def build(season: int, games: list[dict], prev: list[dict], sources: list[dict], manual: list[dict],
+def build(season: int, games, prev: list[dict], sources: list[dict], manual: list[dict],
           get=fetch, log=print) -> list[dict]:
-    """Merge carried-forward, feed, and manual videos into the list the site reads."""
-    ends = week_ends(games)
+    """Merge carried-forward, feed, and manual videos into the list the site reads.
+
+    games is the current season's schedule, or a function season -> schedule so that
+    sources for past seasons (a source with `season: 2024`) can be matched to weeks."""
+    games_for = games if callable(games) else (lambda s: games if s == season else [])
     by_id = {v["id"]: dict(v) for v in prev if v.get("source") == "auto"}
     for src in sources:
         # A curated playlist needs no title filter; a whole channel does.
@@ -145,13 +148,21 @@ def build(season: int, games: list[dict], prev: list[dict], sources: list[dict],
             log(f"[videos] {src.get('name')}: feed returned {code}")
             continue
         found = 0
+        # A past-season source keeps only videos that name a regular-season week in the
+        # title, so playoff and season-recap videos are left out.
+        src_season = int(src.get("season") or season)
+        ends = week_ends(games_for(src_season))
         for e in parse_feed(body):
             if not pat.search(e["title"]) or e["id"] in by_id:
                 continue
-            wk = assign_week(e["title"], e["published"], ends)
+            if src_season != season:
+                m = WEEK_RE.search(e["title"])
+                wk = int(m.group(1)) if m and int(m.group(1)) in ends else None
+            else:
+                wk = assign_week(e["title"], e["published"], ends)
             if wk is None:
                 continue
-            by_id[e["id"]] = {"season": season, "week": wk, "id": e["id"], "title": e["title"],
+            by_id[e["id"]] = {"season": src_season, "week": wk, "id": e["id"], "title": e["title"],
                               "channel": e["channel"] or src.get("name", ""), "published": e["published"],
                               "source": "auto", "embed": "unknown"}
             found += 1

@@ -496,7 +496,7 @@ Phase 2 exit criteria: every page works on desktop and phone (checked at 1280 an
 
 ## 27. Video page (Phase 3, October 18, 2026)
 
-Live on /preview at `video.html?season=&week=`, menu label Video, page heading The Lowlights.
+Live on /preview at `video.html?season=&week=`, menu label Video, page heading Reel Good Sabotage (owner, October 18; was The Lowlights). Videos open on YouTube: NFL Rush uploads carry an NFL claim that blocks playback on other sites, which the oEmbed check cannot detect, so `play_on_site: false` is set. Past seasons: NFL Rush playlists for 2024 and 2023 (titles must name a week); 2025 has no playlist and goes in by hand.
 
 Source: NFL Rush's playlist "The Worst NFL Plays - 2026 Season" (list=PLFGkcMzJRQbA), newest first, plus NFL Rush's channel uploads filtered by "worst plays" as a backup. Both are set in `config/video_sources.yml`. Week 2 was missing from the playlist and was added by hand in `config/videos_manual.csv` (`2026,2,<link>,`). A manual row replaces that week; `none` in place of a link hides it.
 

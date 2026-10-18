@@ -20,3 +20,13 @@ sources:
   - name: NFL Rush channel
     channel_id: UC_vl8cSXLBi1tVegCKMRtTw
     title_pattern: "worst plays"
+  # Past seasons. A source with `season` keeps only titles that name a week
+  # ("The WORST Plays of Week 5"); playoff and season-recap videos are skipped.
+  # Each feed lists the first 15 videos of the playlist; add any it misses
+  # to videos_manual.csv.
+  - name: NFL Rush 2024 worst plays playlist
+    playlist_id: PLzvClh0aNo0FtUAmwsdb691I4MGZ-2kCK
+    season: 2024
+  - name: NFL Rush 2023 worst plays playlist
+    playlist_id: PLzvClh0aNo0HY3YvwhXVrHU-tsa5XuZEu
+    season: 2023
