@@ -281,7 +281,7 @@ VIDEO_BODY = """
   <h2 id="v-more-h" hidden>Earlier weeks</h2>
   <div class="vgrid" id="v-more"></div>
 </section>
-<p class="hint">Videos are hosted on YouTube and made by their channels, not by Stars of Sabotage. The player loads only when you press play.</p>
+<p class="hint">Videos are hosted on YouTube and made by their channels, not by Stars of Sabotage.</p>
 """
 
 DEFENSES_BODY = """

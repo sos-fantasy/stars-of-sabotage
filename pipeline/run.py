@@ -215,7 +215,7 @@ def main(argv=None) -> int:
     except Exception as e:
         print(f"[videos] skipped: {e}")
         vids = prev_videos.get("videos", [])
-    _write(data_out / "videos.json", {"videos": vids})
+    _write(data_out / "videos.json", {"videos": vids, "play_on_site": videos.play_on_site()})
 
     recs = records.build(data_out, [s["season"] for s in seasons], cfg, SEASON, weeks)
     # Record alerts on the home page: anything still pending corrections, plus any

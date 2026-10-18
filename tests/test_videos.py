@@ -110,3 +110,13 @@ def test_playlist_feed_uses_entry_author_and_no_filter():
     out = videos.build(2026, GAMES, [], [{"name": "pl", "playlist_id": "PLX"}], [], get=get, log=lambda *_: None)
     assert seen[0].endswith("playlist_id=PLX")
     assert [(v["week"], v["channel"]) for v in out] == [(6, "Trenz")]
+
+
+def test_play_on_site_flag(tmp_path):
+    f = tmp_path / "s.yml"
+    f.write_text("play_on_site: false\nsources: []\n")
+    assert videos.play_on_site(f) is False
+    f.write_text("sources: []\n")
+    assert videos.play_on_site(f) is True
+    assert videos.play_on_site(tmp_path / "missing.yml") is True
+    assert videos.play_on_site() is False   # the live config, set Oct 18, 2026

@@ -40,6 +40,13 @@ def load_sources(path: Path = ROOT / "config" / "video_sources.yml") -> list[dic
     return (yaml.safe_load(path.read_text()) or {}).get("sources", []) or []
 
 
+def play_on_site(path: Path = ROOT / "config" / "video_sources.yml") -> bool:
+    """False when videos should open on YouTube instead of playing on our page."""
+    if not path.exists():
+        return True
+    return bool((yaml.safe_load(path.read_text()) or {}).get("play_on_site", True))
+
+
 def video_id(url: str) -> str | None:
     """Pull the 11-character id out of any common YouTube link, or accept a bare id."""
     url = (url or "").strip()
