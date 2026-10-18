@@ -397,3 +397,40 @@ body:has(.tray:not([hidden])) .site-foot { padding-bottom: 90px; }
 table.cmp th[scope="row"] { background: var(--bg); color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 13px; }
 table.cmp tr.totrow th[scope="row"] { font-size: 15px; }
 .table-wrap { position: relative; }   /* keeps sr-only text inside the scroll box */
+
+/* video page */
+.vlayout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 24px; align-items: start; margin-top: 26px; }
+.vlayout .topcard { margin-top: 0; max-width: none; }
+.vlayout .topcard h2 { margin: 0 0 6px; }
+.vlayout .topcard:empty { display: none; }
+.vcard { margin: 0 0 22px; }
+.vframe { position: relative; aspect-ratio: 16 / 9; background: #000; border: 1px solid var(--line-2); overflow: hidden; display: block; }
+.vframe iframe, .vbtn { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vbtn { padding: 0; background: #000; cursor: pointer; }
+.vframe img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vplay { position: absolute; left: 50%; top: 50%; width: 76px; height: 54px; margin: -27px 0 0 -38px; background: var(--rust); border-radius: 12px; }
+.vplay::after { content: ""; position: absolute; left: 31px; top: 15px; border-style: solid; border-width: 12px 0 12px 20px; border-color: transparent transparent transparent var(--ink); }
+.vbtn:hover .vplay, .vbtn:focus-visible .vplay, a.vframe:hover .vplay { background: var(--yellow); }
+.vbtn:hover .vplay::after, a.vframe:hover .vplay::after { border-left-color: var(--bg); }
+.vnote { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 12px; background: rgba(21,20,15,.88); color: var(--ink); font-size: 12px; }
+.vtitle { font-size: 22px; margin: 12px 0 4px; }
+.vby { margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+.vby a { color: var(--muted); }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); gap: 12px; margin: 10px 0 16px; }
+.vtile { display: block; color: var(--ink); text-decoration: none; background: var(--bg-2); border: 1px solid var(--line); }
+.vtile img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.vtile span { display: block; padding: 6px 10px; font-size: 12px; letter-spacing: .06em; }
+.vtile:hover { border-color: var(--yellow); }
+.top5 .nm a.plink { font-weight: 700; }
+@media (max-width: 720px) {
+  .vlayout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .vtitle { font-size: 18px; }
+  .vgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.vframe img, .vtile img { max-width: 100%; height: auto; }
+.vframe img { height: 100%; }
+@media (max-width: 720px) {
+  /* six links: two even rows of three */
+  .site-head nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
+  .site-head nav a { text-align: center; padding: 7px 2px; font-size: 11px; }
+}

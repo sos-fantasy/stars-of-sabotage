@@ -27,6 +27,7 @@ import records  # noqa: E402
 import schedule  # noqa: E402
 import score  # noqa: E402
 import site_build  # noqa: E402
+import videos  # noqa: E402
 
 SEASON = int(os.environ.get("SOS_SEASON", "2026"))
 FIRST_SEASON = 1999   # nflverse play-by-play starts here
@@ -206,6 +207,16 @@ def main(argv=None) -> int:
                        "stories": story_list},
         "source": "nflverse (CC BY 4.0)",
     }
+    # Worst-plays videos. Network trouble never fails the run: earlier videos carry forward.
+    prev_videos = _read_json(prev_data / "videos.json", {}) if prev_data else {}
+    try:
+        vids = videos.build(SEASON, export_rows(_read_json(data_out / f"games-{SEASON}.json")),
+                            prev_videos.get("videos", []), videos.load_sources(), videos.read_manual())
+    except Exception as e:
+        print(f"[videos] skipped: {e}")
+        vids = prev_videos.get("videos", [])
+    _write(data_out / "videos.json", {"videos": vids})
+
     recs = records.build(data_out, [s["season"] for s in seasons], cfg, SEASON, weeks)
     # Record alerts on the home page: anything still pending corrections, plus any
     # record (pending or official) set in the week the report covers.
@@ -221,6 +232,13 @@ def main(argv=None) -> int:
           f"data {'unchanged' if updated_at == prev_meta.get('updated_at') else 'changed'} ({h})")
     _set_output("ran", "true")
     return 0
+
+
+def export_rows(compact_obj) -> list[dict]:
+    """Expand a {cols, rows} file into a list of dicts."""
+    if not compact_obj:
+        return []
+    return [dict(zip(compact_obj["cols"], r)) for r in compact_obj["rows"]]
 
 
 def _read_json(path: Path, default=None):

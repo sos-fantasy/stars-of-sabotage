@@ -1,0 +1,8 @@
+# Channels checked for the weekly worst-plays video (brief section 10).
+# The pipeline reads each channel's public RSS feed and keeps uploads whose title
+# matches title_pattern (a case-insensitive regular expression).
+# OWNER CHECK: confirm this is the channel and series you want.
+sources:
+  - name: NFL Rush
+    channel_id: UC_vl8cSXLBi1tVegCKMRtTw
+    title_pattern: "worst plays"
