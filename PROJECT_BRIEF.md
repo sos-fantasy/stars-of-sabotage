@@ -493,3 +493,17 @@ Live on /preview October 17 at `compare.html?ids=<id>,<id>&season=<year|career>&
 Hand checks: Winston 2019 totals 1,367 (492 + 235 + 300 + 147 + 84 + 50 + 59); Barkley career 2,711; Tucker 2019 kicking 46 = two missed PATs (32) + one missed 40 to 49 yard field goal (14).
 
 Phase 2 exit criteria: every page works on desktop and phone (checked at 1280 and 390 px). The "stranger finds and compares two players without instructions" test still needs a real person who has not seen the site.
+
+## 27. Video page (Phase 3, October 18, 2026)
+
+Live on /preview at `video.html?season=&week=`, menu label Video, page heading The Lowlights.
+
+Source: NFL Rush's playlist "The Worst NFL Plays - 2026 Season" (list=PLFGkcMzJRQbA), newest first, plus NFL Rush's channel uploads filtered by "worst plays" as a backup. Both are set in `config/video_sources.yml`. Week 2 was missing from the playlist and was added by hand in `config/videos_manual.csv` (`2026,2,<link>,`). A manual row replaces that week; `none` in place of a link hides it.
+
+Each run: read the feeds, assign a week (the title's week number if that week has finished, else the latest week finished by the publish date in Eastern time), check embedding through oEmbed (200 yes, 401/403 no, 404 dropped), keep earlier finds, write `data/videos.json`. A YouTube failure never stops the score update.
+
+First run, October 18: weeks 1 to 5 found, all embeddable, all from NFL Rush.
+
+The page shows a thumbnail and loads the youtube-nocookie.com player only on press, a "watch on YouTube" card if embedding is off, the week's top five Sabotage scorers, and earlier weeks.
+
+Phase 3 exit criteria: a manual add takes one line (met). "The latest video appears for its week without manual work" gets its first real test when the Week 6 video is posted.
