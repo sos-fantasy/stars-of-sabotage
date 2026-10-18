@@ -30,7 +30,9 @@ async function init() {
   const seen = new Set();
   for (const v of list) if (!seen.has(key(v))) { seen.add(key(v)); weeks.push(v); }
   const sel = $("#v-week");
-  sel.innerHTML = weeks.map((v) => `<option value="${key(v)}">${v.season} week ${v.week}</option>`).join("");
+  const seasons = [...new Set(weeks.map((v) => v.season))];
+  sel.innerHTML = seasons.map((s) => `<optgroup label="${s}">${weeks.filter((v) => v.season === s)
+    .map((v) => `<option value="${key(v)}">${v.season} week ${v.week}</option>`).join("")}</optgroup>`).join("");
   const want = `${params.get("season")}-${params.get("week")}`;
   sel.value = weeks.some((v) => key(v) === want) ? want : key(weeks[0]);
   sel.onchange = () => show(sel.value, true);
@@ -49,7 +51,11 @@ async function init() {
     const vids = list.filter((v) => v.season === season && v.week === week);
     $("#v-main").innerHTML = vids.map(card).join("");
     $("#v-main").querySelectorAll("[data-play]").forEach((b) => (b.onclick = () => play(b)));
-    $("#v-more").innerHTML = weeks.filter((v) => key(v) !== k).slice(0, 12).map((v) =>
+    // The rest of that season, then the start of the season before it.
+    const same = weeks.filter((v) => v.season === season && key(v) !== k);
+    const older = weeks.filter((v) => v.season < season).slice(0, Math.max(0, 8 - same.length));
+    $("#v-more-h").textContent = same.length ? `More from ${season}` : "Earlier seasons";
+    $("#v-more").innerHTML = [...same, ...older].map((v) =>
       `<a class="vtile" href="?season=${v.season}&week=${v.week}" data-k="${key(v)}">
         <img src="${thumb(v.id)}" alt="" loading="lazy" width="480" height="360"><span>${v.season} week ${v.week}</span></a>`).join("");
     $("#v-more-h").hidden = weeks.length < 2;
