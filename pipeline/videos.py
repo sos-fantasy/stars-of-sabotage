@@ -172,17 +172,20 @@ def build(season: int, games: list[dict], prev: list[dict], sources: list[dict],
             if status == "gone":
                 log(f"[videos] {v['id']} ({v['season']} week {v['week']}) is no longer on YouTube; dropped")
                 continue
-            if v["source"] == "manual" and not v["title"] and status == "yes":
-                v["title"] = _oembed_title(v["id"], get) or ""
+            if v["source"] == "manual" and (not v["title"] or not v["channel"]) and status == "yes":
+                info = _oembed(v["id"], get)
+                v["title"] = v["title"] or info.get("title", "")
+                v["channel"] = v["channel"] or info.get("author_name", "")
         kept.append(v)
     kept.sort(key=lambda v: (-v["season"], -v["week"], v.get("published") or ""))
     return kept
 
 
-def _oembed_title(vid: str, get) -> str | None:
+def _oembed(vid: str, get) -> dict:
+    """Title and uploader name from oEmbed, for videos added by hand."""
     import json
     try:
         code, body = get(OEMBED.format(vid))
-        return json.loads(body).get("title") if code == 200 else None
+        return json.loads(body) if code == 200 else {}
     except Exception:
-        return None
+        return {}

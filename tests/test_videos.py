@@ -28,7 +28,7 @@ def fake_get(feed_xml, embed=None):
             return 200, feed_xml
         vid = url.rsplit("v=", 1)[1]
         code = embed.get(vid, 200)
-        return code, json.dumps({"title": f"oEmbed title {vid}"}) if code == 200 else ""
+        return code, json.dumps({"title": f"oEmbed title {vid}", "author_name": "NFL Rush"}) if code == 200 else ""
     return get
 
 
@@ -75,7 +75,7 @@ def test_manual_row_replaces_week_and_none_hides():
               {"season": 2026, "week": 5, "id": None, "title": "", "hide": True}]
     out = videos.build(2026, GAMES, [], src, manual, get=fake_get(xml), log=lambda *_: None)
     assert [(v["week"], v["id"], v["source"]) for v in out] == [(6, "MMMMMMMMMMM", "manual")]
-    assert out[0]["title"] == "oEmbed title MMMMMMMMMMM"
+    assert (out[0]["title"], out[0]["channel"]) == ("oEmbed title MMMMMMMMMMM", "NFL Rush")
 
 
 def test_carry_forward_and_drop_removed():
