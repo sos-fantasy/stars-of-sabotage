@@ -96,3 +96,17 @@ def test_feed_failure_keeps_previous():
         return 200, "{}"
     out = videos.build(2026, GAMES, prev, [{"name": "NFL Rush", "channel_id": "X"}], [], get=get, log=lambda *_: None)
     assert [v["id"] for v in out] == ["OLDOLDOLDOL"]
+
+
+def test_playlist_feed_uses_entry_author_and_no_filter():
+    xml = """<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015">
+      <title>2026 Worst Plays</title>
+      <entry><yt:videoId>PPPPPPPPPPP</yt:videoId><title>Week 6 disasters</title>
+        <published>2026-10-14T15:00:00+00:00</published><author><name>Trenz</name></author></entry></feed>"""
+    seen = []
+    def get(url):
+        seen.append(url)
+        return (200, xml) if "feeds" in url else (200, "{}")
+    out = videos.build(2026, GAMES, [], [{"name": "pl", "playlist_id": "PLX"}], [], get=get, log=lambda *_: None)
+    assert seen[0].endswith("playlist_id=PLX")
+    assert [(v["week"], v["channel"]) for v in out] == [(6, "Trenz")]

@@ -3,7 +3,8 @@
 Sources, in order of authority:
 1. config/videos_manual.csv: rows the owner adds by hand. A manual row replaces every
    automatic video for that season and week. A youtube_url of "none" hides the week.
-2. YouTube RSS feeds for the channels in config/video_sources.yml, filtered by title.
+2. YouTube RSS feeds for the playlists or channels in config/video_sources.yml
+   (channels are filtered by title; a curated playlist can skip the filter).
 3. Videos found on earlier runs, carried forward from the previous deploy, because a
    feed only lists a channel's latest 15 or so uploads.
 
@@ -24,7 +25,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-FEED = "https://www.youtube.com/feeds/videos.xml?channel_id={}"
+FEED = "https://www.youtube.com/feeds/videos.xml?{}={}"   # channel_id or playlist_id
 OEMBED = "https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v={}"
 NS = {"a": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015",
       "media": "http://search.yahoo.com/mrss/"}
@@ -56,8 +57,10 @@ def parse_feed(xml_text: str) -> list[dict]:
         vid = e.findtext("yt:videoId", namespaces=NS)
         if not vid:
             continue
+        # In a playlist feed each entry names its own uploader; prefer that.
+        author = e.findtext("a:author/a:name", namespaces=NS)
         out.append({"id": vid, "title": (e.findtext("a:title", namespaces=NS) or "").strip(),
-                    "published": e.findtext("a:published", namespaces=NS), "channel": channel})
+                    "published": e.findtext("a:published", namespaces=NS), "channel": author or channel})
     return out
 
 
@@ -123,9 +126,11 @@ def build(season: int, games: list[dict], prev: list[dict], sources: list[dict],
     ends = week_ends(games)
     by_id = {v["id"]: dict(v) for v in prev if v.get("source") == "auto"}
     for src in sources:
-        pat = re.compile(src.get("title_pattern", "worst plays"), re.I)
+        # A curated playlist needs no title filter; a whole channel does.
+        pat = re.compile(src.get("title_pattern") or "", re.I)
+        kind = "playlist_id" if src.get("playlist_id") else "channel_id"
         try:
-            code, body = get(FEED.format(src["channel_id"]))
+            code, body = get(FEED.format(kind, src[kind]))
         except Exception as e:  # network trouble: keep what we had
             log(f"[videos] {src.get('name')}: feed unreachable ({e})")
             continue
