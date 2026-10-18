@@ -1,0 +1,15 @@
+# Feeds checked for the weekly worst-plays video (brief section 10).
+# Each source is a YouTube playlist (playlist_id) or a whole channel (channel_id).
+# The pipeline reads the public RSS feed and keeps uploads whose title matches
+# title_pattern (a case-insensitive regular expression; leave it out to keep everything).
+# A feed lists only about 15 videos; anything found earlier is kept from past runs.
+# The same video found in both feeds is stored once.
+sources:
+  # "The Worst NFL Plays - 2026 Season" by NFL Rush (owner's pick, October 18, 2026).
+  # Newest first, so new weeks stay inside the feed's 15-video window.
+  - name: NFL Rush 2026 worst plays playlist
+    playlist_id: PLFGkcMzJRQbA
+  # Backup: NFL Rush's channel uploads, filtered by title, in case the playlist lags.
+  - name: NFL Rush channel
+    channel_id: UC_vl8cSXLBi1tVegCKMRtTw
+    title_pattern: "worst plays"

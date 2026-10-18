@@ -10,7 +10,7 @@ October 15, 2026. Data pulled with nflreadpy 0.1.5. Covers 2026 weeks 1 to 5 (79
 | Scoring engine | Built. `config/scoring.yml`, `pipeline/score.py`, 31 hand-computed tests passing |
 | Settle 3.3 against the league | Done. All 7 settled; points allowed uses Yahoo's rule |
 | NFL.com and nflverse terms | Read. Owner chose option A on Oct 16, 2026 (free, ad-free, attributed). Revisit before any revenue |
-| Video channel, title pattern, embed test | Partly done. See below. NFL Rush titles not confirmed |
+| Video channel, title pattern, embed test | Resolved Oct 18: NFL Rush playlist "The Worst NFL Plays - 2026 Season". Embed check runs in the pipeline |
 | GitHub scheduled-workflow rule | Confirmed: public repos, 60 days without activity |
 | Deploy path (5.2) | Waiting on owner |
 | NFL Savant screenshots | Waiting on owner |
@@ -59,7 +59,7 @@ Owner check: open youtube.com/@NFLRush/videos and tell me whether the worst-play
 
 1. Resolved: Yahoo points-allowed rule, return fumbles count, shutout scores 0.
 2. Method page drafted at `site/method.html`; owner review pending.
-3. Which channel carries the worst-plays video you want.
+3. Resolved Oct 18: NFL Rush's playlist "The Worst NFL Plays - 2026 Season" (list=PLFGkcMzJRQbA). Titles read "NFL WORST Plays of Week 5!" and similar. Weeks 1, 3, 4, 5 were in it on Oct 18; week 2 was not.
 4. Deploy path A, B, or C (brief 5.2). I recommend A.
 5. Public or private GitHub repo. Private avoids the 60-day rule. Before choosing private, I will check the current free Actions minutes for private repos against an hourly schedule.
 6. Resolved: licensing option A (Oct 16, 2026).

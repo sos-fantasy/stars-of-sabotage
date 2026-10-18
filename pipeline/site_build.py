@@ -19,7 +19,7 @@ DESCRIPTION = ("Sabotage fantasy football stats: NFL players and defenses ranked
                "sacks, turnovers, missed kicks, and points allowed.")
 
 
-NAV = (("board", "./", "Leaderboard"), ("compare", "compare.html", "Compare"), ("defenses", "defenses.html", "Defenses"),
+NAV = (("board", "./", "Leaderboard"), ("compare", "compare.html", "Compare"), ("defenses", "defenses.html", "Defenses"), ("video", "video.html", "Video"),
        ("supers", "super-stars.html", "Super Stars"), ("method", "method.html", "Scoring"))
 
 HEAD_SEARCH = """<div class="hsearch" data-search role="search">
@@ -263,6 +263,27 @@ COMPARE_BODY = """
 </div>
 """
 
+VIDEO_BODY = """
+<section class="hero">
+  <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
+  <div>
+    <p class="eyebrow">Worst plays of the week</p>
+    <h1>The <span class="hl">Lowlights</span></h1>
+    <p class="lede">The week's worst plays on video, next to the players who scored the most Sabotage points.</p>
+    <div class="ctl inline" id="v-pick"><label for="v-week">Week</label><select id="v-week"></select></div>
+  </div>
+</section>
+<div class="vlayout">
+  <section id="v-main" aria-live="polite"><p class="loading">Loading&hellip;</p></section>
+  <aside class="topcard" id="v-culprits" aria-label="Top five that week"></aside>
+</div>
+<section aria-labelledby="v-more-h">
+  <h2 id="v-more-h" hidden>Earlier weeks</h2>
+  <div class="vgrid" id="v-more"></div>
+</section>
+<p class="hint">Videos are hosted on YouTube and made by their channels, not by Stars of Sabotage. The player loads only when you press play.</p>
+"""
+
 DEFENSES_BODY = """
 <section class="hero">
   <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
@@ -497,7 +518,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     a = out / "assets"
     v = {"css": _hash(a / "styles.css")}
     # In dependency order: each module's imports are already hashed when it is rewritten.
-    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare"):
+    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare", "videos"):
         src = (a / f"{mod}.js").read_text()
         for dep in [d for d in v if d != "css"]:
             src = src.replace(f'from "./{dep}.js"', f'from "./{dep}.js?v={v[dep]}"')
@@ -506,7 +527,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
 
     def tag(html: str) -> str:
         html = html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
-        for mod in ("foot", "common", "app", "player", "defenses", "compare"):
+        for mod in ("foot", "common", "app", "player", "defenses", "compare", "videos"):
             html = html.replace(f'src="assets/{mod}.js"', f'src="assets/{mod}.js?v={v[mod]}"')
         return html
     import json
@@ -537,6 +558,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     (out / "player.html").write_text(page("Player | Stars of Sabotage", PLAYER_BODY, "player", "player"))
     (out / "defenses.html").write_text(page("Defenses | Stars of Sabotage", DEFENSES_BODY, "defenses", "defenses"))
     (out / "compare.html").write_text(page("Compare players | Stars of Sabotage", COMPARE_BODY, "compare", "compare"))
+    (out / "video.html").write_text(page("Worst plays of the week | Stars of Sabotage", VIDEO_BODY, "video", "videos"))
 
 
 if __name__ == "__main__":
