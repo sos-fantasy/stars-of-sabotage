@@ -560,3 +560,7 @@ News: owner suggested Ian Rapoport, Adam Schefter and NFL official accounts on X
 ## 31. Targets (owner, October 19, 2026)
 
 Targets are shown, not scored: a "Tgt" column in the leaderboard's Stats view (totals and per game) and in player game logs. Source: nflverse player stats `targets`, carried as `n_targets` in every score file. nflverse has no target counts for 2003 to 2008 (league-wide targets below catches; checked October 19, 2026), and play-by-play cannot rebuild them because incompletions in those seasons have no receiver. Those seasons store null and show a blank; any season or career total that includes such a game is blank rather than short. Derived-from-play-by-play targets matched nflverse exactly for 2010, as a check. Sabotage points are unchanged (2026 and 2005 rescored with identical points). Needs one full backfill run after the merge so every season file gets the column.
+
+## 32. Wreckage Report lines by week (owner, October 19, 2026)
+
+Each of the six awards (saboteur of the week with a QB or non-QB version, pick six, butterfingers, kicker, defense) has 18 lines in `pipeline/stories.py`, one per regular-season week: week 1 uses line 1, week 18 line 18, playoff weeks wrap to line 1. No model call is needed; names and stats fill in from the scored data. Tests check 18 distinct lines per award, every placeholder fills, and house style (no em dashes, banned words).

@@ -148,3 +148,18 @@ def test_target_totals_blank_if_any_game_missing():
     out = dict(df.group_by("p").agg(export.total_expr("n_targets")).iter_rows())
     # a: one game without targets -> blank; b: 4 + 6 = 10
     assert out["a"] is None and out["b"] == 10
+
+
+@pytest.mark.parametrize("kind", list(stories.TEMPLATES))
+def test_eighteen_distinct_lines_per_award(kind):
+    lines = stories.TEMPLATES[kind]
+    assert len(lines) == 18 and len(set(lines)) == 18
+
+
+def test_line_follows_week_number():
+    players = [_p("QB1", "QB", 100, n_incomplete=20)]
+    w1 = stories.build(1, players, [], 2026)[0]["text"]
+    w2 = stories.build(2, players, [], 2026)[0]["text"]
+    w19 = stories.build(19, players, [], 2026)[0]["text"]
+    assert w1 != w2 and w19 == w1          # week 19 (playoffs) wraps to line 1
+    assert w1.startswith("QB1 played quarterback like a man returning a rental car")
