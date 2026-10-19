@@ -60,6 +60,9 @@ PROPOSALS = {
     "turnover_luck": ("Mostly randomness",
                       "Fumbles, interceptions and pick sixes repeat poorly. Expect these misses to continue; no data "
                       "fix is likely to remove them."),
+    "role_change": ("Track depth chart moves",
+                    "A player who moved up or down the depth chart that week, or was new to it, plays a different "
+                    "role than his history shows. Test weighting recent games more after a depth chart change."),
     "news": ("Check team news",
              "A miss with no measured cause may come from news we do not read (a coach limiting a player, a role "
              "change). This needs a licensed news source before it can be tested."),
@@ -90,7 +93,8 @@ def update_log(log: dict, proj: dict, now) -> dict:
     return log
 
 
-def replay_log(season: int, week: int, hist: pl.DataFrame, sched: pl.DataFrame, def_hist: pl.DataFrame, cfg: dict) -> dict:
+def replay_log(season: int, week: int, hist: pl.DataFrame, sched: pl.DataFrame, def_hist: pl.DataFrame, cfg: dict,
+               snaps: pl.DataFrame | None = None) -> dict:
     """For weeks before the log existed: projections rebuilt from games played before the
     week, for every player who played (no depth chart or forecast). Marked 'replayed'."""
     import projections as PR
@@ -98,7 +102,7 @@ def replay_log(season: int, week: int, hist: pl.DataFrame, sched: pl.DataFrame, 
     actual = hist.filter(pl.col("t") == t)
     up = actual.select("player_id", "player_display_name", "position", "team", "opponent_team", "season", "week") \
                .with_columns(pl.lit(None, dtype=pl.Utf8).alias("game_id"))
-    pr = PR.player_projections(hist.filter(pl.col("t") < t), up, sched, cfg, t)
+    pr = PR.player_projections(hist.filter(pl.col("t") < t), up, sched, cfg, t, snaps=snaps)
     players = {r["player_id"]: {"id": r["player_id"], "name": r["player_display_name"], "pos": r["position"],
                                 "team": r["team"], "opp": r["opponent_team"], "proj": r["proj"], "lo": r["lo"],
                                 "hi": r["hi"], "method": r["method"], "components": r["components"], "slot": None}
@@ -159,7 +163,7 @@ def range_probability(proj: float, lo: float, hi: float, miss: float) -> float |
 # ---------- the review ----------
 
 def build_week(season: int, week: int, log: dict, data_out: Path, cfg: dict, sched: pl.DataFrame,
-               loaders: dict, mae_by_pos: dict) -> dict:
+               loaders: dict, mae_by_pos: dict, prev_log: dict | None = None) -> dict:
     """loaders: functions returning snap counts, player stats, injuries, players (id crosswalk);
     any may fail, and that cause is then reported as 'not measured'."""
     W = P.weights(cfg)
@@ -206,6 +210,13 @@ def build_week(season: int, week: int, log: dict, data_out: Path, cfg: dict, sch
     top = sorted(rows, key=lambda r: -abs(r["miss"]))[:TOP_N]
 
     measures = _measures(season, week, [r for r in top if r["kind"] == "player"], hist, sched, loaders)
+    # depth chart: this week's slot against last week's (live weeks only)
+    if prev_log and log.get("source") == "live":
+        before = {pid: p.get("slot") for pid, p in prev_log.get("players", {}).items()}
+        for r in top:
+            if r["kind"] == "player" and r.get("slot"):
+                measures.setdefault(r["id"], {})["slot"] = r["slot"]
+                measures[r["id"]]["slot_prev"] = before.get(r["id"])
     out_top = []
     for r in top:
         out_top.append(_explain(r, W, measures.get(r["id"], {}), sched, season, week, len(rows)))
@@ -320,6 +331,10 @@ def _explain(r: dict, W: dict, m: dict, sched, season, week, n_week: int = 1) ->
                 tags.append("volume")
                 why.append(f"Volume swung: {v} {word} against his recent {u}.")
                 break
+        if "slot" in m and m.get("slot") != m.get("slot_prev"):
+            tags.append("role_change")
+            why.append(f"Depth chart change: {m['slot']} this week, "
+                       + (f"{m['slot_prev']} the week before." if m.get("slot_prev") else "not a listed starter the week before."))
         sk = next((x for x in breakdown if x["event"] == "sacks"), None)
         if sk and sk["actual"] >= 2 * sk["projected"] + 2:
             tags.append("pressure")
@@ -467,7 +482,7 @@ def run(data_out: Path, prev_data: Path | None, season: int, now, cfg: dict, wee
                    "stats": lru_cache(None)(lambda: nfl.load_player_stats(season)),
                    "injuries": lru_cache(None)(lambda: nfl.load_injuries(season)),
                    "players": lru_cache(None)(lambda: nfl.load_players())}
-        hist = defs = None
+        hist = defs = snaps_all = None
         for w in todo:
             lp = logdir / f"{season}-w{w['week']:02d}.json"
             wlog = json.loads(lp.read_text()) if lp.exists() else None
@@ -479,9 +494,18 @@ def run(data_out: Path, prev_data: Path | None, season: int, now, cfg: dict, wee
                                       .with_columns(pl.lit(s).alias("season"))
                                       for s in seasons if (data_out / f"defense-{s}.json").exists()
                                       for d in [json.loads((data_out / f"defense-{s}.json").read_text())]], how="diagonal_relaxed")
-                wlog = replay_log(season, w["week"], hist, sched, defs, cfg)
+                if snaps_all is None:
+                    import projections as PR
+                    try:
+                        snaps_all = PR.load_snaps(list(range(season - 10, season + 1)))
+                    except Exception as e:
+                        log(f"[review] snap counts unavailable for replay: {e}")
+                        snaps_all = pl.DataFrame()
+                wlog = replay_log(season, w["week"], hist, sched, defs, cfg, snaps=snaps_all)
                 lp.write_text(json.dumps(wlog, default=str))
-            review = build_week(season, w["week"], wlog, data_out, cfg, sched, loaders, mae)
+            pp = logdir / f"{season}-w{w['week'] - 1:02d}.json"
+            review = build_week(season, w["week"], wlog, data_out, cfg, sched, loaders, mae,
+                                prev_log=json.loads(pp.read_text()) if pp.exists() else None)
             if not review:
                 continue
             review["status"] = w["status"]

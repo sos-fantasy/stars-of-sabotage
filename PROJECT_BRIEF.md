@@ -538,3 +538,21 @@ Weather: Open-Meteo free tier, non-commercial, under 10,000 calls a day, CC BY 4
 - Each cause is tagged and tallied across weeks with a proposed data addition and how to test it. Status per proposal lives in `config/improvement_status.yml` (proposed, testing, adopted, rejected). No change reaches the live model without beating the backtest.
 - Claude write-up: the owner chose rules plus Claude. With the `ANTHROPIC_API_KEY` repository secret set, the pipeline sends each week's measured facts and the tally to the Messages API (`claude-sonnet-5-5`, at most 1,400 output tokens, once per week and again if the facts change) and shows the text labeled as written by Claude. Without the key the page shows the rule-based analysis only. Price checked October 19, 2026: $2 input and $10 output per million tokens, so a weekly review costs a few cents.
 - Projections cannot reach 100%. Fumbles, interceptions and pick sixes are close to random; the page says so and tracks the part with a measured cause.
+
+## 30. Snap share, injury report, depth chart (owner request, October 19, 2026)
+
+Owner asked to add snap share, final score vs the spread, pass attempts vs incompletion rate, forecast vs actual wind, the injury report, and depth chart changes.
+
+All six appear on the projection review page as measured causes of each miss (depth chart change added: a player's slot this week vs last week's live log).
+
+Only facts known before kickoff can feed projections. Final score vs the spread and actual wind happen during the game, so they explain misses but cannot predict them; the model already uses the spread and the forecast. Backtested as projection features, 2021-2025:
+
+| Version | QB miss / rank | RB | WR | TE |
+|---|---|---|---|---|
+| Before | 19.54 / 0.31 | 5.38 / 0.75 | 3.60 / 0.61 | 2.94 / 0.59 |
+| + snap share, last 3 games (adopted) | 19.23 / 0.34 | 5.27 / 0.75 | 3.57 / 0.62 | 2.89 / 0.61 |
+| + Questionable, limited or missed practice | no further gain (not adopted) | | | |
+
+Pass attempts are not projected separately yet; "project opportunities directly" stays on the review page as a proposal.
+
+News: owner suggested Ian Rapoport, Adam Schefter and NFL official accounts on X, followed from the Stars of Sabotage account. Open question; see the chat of October 19.

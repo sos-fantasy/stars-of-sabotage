@@ -1,6 +1,12 @@
 # Status of each proposed improvement on the projection review page.
 # status: proposed | testing | adopted | rejected (tested, no gain). note: short public note.
 # Updated by hand after a backtest. Nothing changes the live model without one.
+playing_time:
+  status: adopted
+  note: "Added Oct 19, 2026: recent snap share. Backtest 2021-2025: QB average miss 19.54 to 19.23, rank match 0.31 to 0.34; RB, WR and TE improved too."
+injury_tag:
+  status: rejected
+  note: "Tested Oct 19, 2026: Questionable status and limited or missed practice added nothing on the 2021-2025 backtest once snap share was in."
 turnover_luck:
   status: proposed
   note: "Randomness; listed so the tally stays honest."

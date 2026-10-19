@@ -6,7 +6,7 @@
   2024,
   2025
  ],
- "created": "2026-10-19T04:21+00:00",
+ "created": "2026-10-19T06:04+00:00",
  "players": {
   "K": {
    "n": 2716,
@@ -27,8 +27,8 @@
   "QB": {
    "n": 3279,
    "proj": {
-    "mae": 19.54,
-    "spearman": 0.313
+    "mae": 19.23,
+    "spearman": 0.337
    },
    "b_std": {
     "mae": 20.37,
@@ -38,13 +38,13 @@
     "mae": 21.0,
     "spearman": 0.236
    },
-   "range_hit": 0.816
+   "range_hit": 0.819
   },
   "RB": {
    "n": 8156,
    "proj": {
-    "mae": 5.38,
-    "spearman": 0.745
+    "mae": 5.27,
+    "spearman": 0.748
    },
    "b_std": {
     "mae": 5.47,
@@ -54,13 +54,13 @@
     "mae": 5.54,
     "spearman": 0.718
    },
-   "range_hit": 0.869
+   "range_hit": 0.861
   },
   "TE": {
    "n": 6112,
    "proj": {
-    "mae": 2.94,
-    "spearman": 0.59
+    "mae": 2.89,
+    "spearman": 0.606
    },
    "b_std": {
     "mae": 3.04,
@@ -70,13 +70,13 @@
     "mae": 3.14,
     "spearman": 0.554
    },
-   "range_hit": 0.899
+   "range_hit": 0.902
   },
   "WR": {
    "n": 12298,
    "proj": {
-    "mae": 3.6,
-    "spearman": 0.613
+    "mae": 3.57,
+    "spearman": 0.623
    },
    "b_std": {
     "mae": 3.77,
@@ -86,7 +86,7 @@
     "mae": 3.82,
     "spearman": 0.566
    },
-   "range_hit": 0.895
+   "range_hit": 0.897
   }
  },
  "defenses": {

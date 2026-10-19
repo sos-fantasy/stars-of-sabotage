@@ -6,7 +6,7 @@ import { loadMeta, fillFooter } from "./foot.js";
 const params = new URLSearchParams(location.search);
 const POS = { QB: "Quarterbacks", RB: "Running backs", WR: "Wide receivers", TE: "Tight ends", K: "Kickers", DEF: "Defenses" };
 const TAG = { playing_time: "Playing time", injury_tag: "Injury report", volume: "Volume", efficiency: "Passing efficiency",
-  game_script: "Game script", pressure: "Sacks", weather: "Weather", turnover_luck: "Turnover luck", news: "Unmeasured cause" };
+  game_script: "Game script", pressure: "Sacks", weather: "Weather", turnover_luck: "Turnover luck", role_change: "Depth chart change", news: "Unmeasured cause" };
 const STATUS = { proposed: "Proposed", testing: "Testing", adopted: "Adopted", rejected: "Tested, no gain" };
 const fmt = (v, d = 1) => (v === null || v === undefined ? "" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }));
 let data = null;
@@ -58,6 +58,7 @@ function card(t) {
   if (f.carries) measured.push(`Carries: ${f.carries}${f.carries_usual !== undefined ? ` (usual ${fmt(f.carries_usual)})` : ""}`);
   if (f.targets) measured.push(`Targets: ${f.targets}${f.targets_usual !== undefined ? ` (usual ${fmt(f.targets_usual)})` : ""}`);
   if (f.injury_status) measured.push(`Injury report: ${f.injury_status}`);
+  if (f.slot) measured.push(`Depth chart: ${f.slot}${f.slot_prev ? ` (week before: ${f.slot_prev})` : f.slot_prev === null ? " (new starter)" : ""}`);
   if (t.game && t.game.score) measured.push(`Final: ${t.game.score}`);
   return `<article class="miss">
     <header><p class="mname"><a class="plink" href="${link}">${esc(t.name)}</a> <span class="dim">${esc(t.pos)} · ${esc(t.team)} vs ${esc(t.opp)}</span></p>

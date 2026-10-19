@@ -39,6 +39,7 @@ def main(argv=None):
     hist_all = P.load_history(Path(a.data_dir), list(range(first, hi + 1)))
     hist_all = P.baselines(hist_all)
     ctx = P.game_context(sched)
+    snaps = PR.load_snaps(list(range(first, hi + 1)))
     rows, drows = [], []
     defs = []
     for s in range(first, hi + 1):
@@ -55,7 +56,7 @@ def main(argv=None):
             up = actual.select("player_id", "player_display_name", "position", "team", "opponent_team", "season", "week") \
                        .with_columns(pl.lit(None, dtype=pl.Utf8).alias("game_id"))
             hist = hist_all.filter(pl.col("t") < t).drop(["b_std", "b_last4"])
-            pr = PR.player_projections(hist, up, sched, cfg, t)
+            pr = PR.player_projections(hist, up, sched, cfg, t, snaps=snaps)
             rows.append(pr.select("player_id", "proj", "lo", "hi").join(
                 actual.select("player_id", "pg", "season", "week", "sabotage_pts", "b_std", "b_last4"), on="player_id"))
             # defenses

@@ -43,20 +43,46 @@ def design(d: pl.DataFrame, c: str) -> np.ndarray:
         d["home"].to_numpy().astype(float),
         d["indoor"].to_numpy().astype(float),
         d["wind_mph"].to_numpy() / 10,
+        np.log(np.clip(d["snap3"].to_numpy(), 0.05, 1.0)),
     ])
 
 
-FEATURE_NAMES = ["", "", "game script", "game script", "opponent", "home field", "roof", "wind"]
+# Snap share is left out of the "why" text: compared with a full-time player every
+# part-timer would read as a minus, which says nothing useful.
+FEATURE_NAMES = ["", "", "game script", "game script", "opponent", "home field", "roof", "wind", ""]
+SNAP_DEFAULT = 0.5   # share used when a player has no snap counts yet (same as in the backtest)
+
+
+def add_snap_share(m: pl.DataFrame, snaps: pl.DataFrame | None) -> pl.DataFrame:
+    """Average share of offensive snaps over the player's previous three games.
+    Added October 19, 2026 after it beat the model without it on the 2021 to 2025 backtest."""
+    if snaps is None or snaps.is_empty():
+        return m.with_columns(pl.lit(SNAP_DEFAULT).alias("snap3"))
+    s = snaps.select("player_id", pl.col("season").cast(m.schema["season"]), pl.col("week").cast(m.schema["week"]),
+                     "offense_pct").unique(["player_id", "season", "week"])
+    m = m.join(s, on=["player_id", "season", "week"], how="left").sort(["player_id", "t"])
+    return m.with_columns(pl.col("offense_pct").shift(1).rolling_mean(3, min_samples=1).over("player_id")
+                          .fill_null(SNAP_DEFAULT).alias("snap3"))
+
+
+def load_snaps(seasons) -> pl.DataFrame:
+    """nflverse snap counts (2013 on) keyed by GSIS player id."""
+    import nflreadpy as nfl
+    ids = nfl.load_players().select("gsis_id", "pfr_id").drop_nulls()
+    s = nfl.load_snap_counts([x for x in seasons if x >= 2013]).filter(pl.col("game_type") == "REG")
+    return s.join(ids, left_on="pfr_player_id", right_on="pfr_id").select(
+        pl.col("gsis_id").alias("player_id"), "season", "week", "offense_pct")
 
 
 def _fill_ctx(df: pl.DataFrame, cols) -> pl.DataFrame:
     return df.with_columns(pl.col("implied").fill_null(22.0), pl.col("team_spread").fill_null(0.0),
                            pl.col("home").fill_null(0), pl.col("indoor").fill_null(False),
-                           pl.col("wind_mph").fill_null(8.0), *[pl.col(f"o_{c}").fill_null(1.0) for c in cols])
+                           pl.col("wind_mph").fill_null(8.0), pl.col("snap3").fill_null(SNAP_DEFAULT),
+                           *[pl.col(f"o_{c}").fill_null(1.0) for c in cols])
 
 
 def player_projections(hist: pl.DataFrame, upcoming: pl.DataFrame, sched_all: pl.DataFrame, cfg: dict,
-                       target_t: int, wind_override: dict | None = None) -> pl.DataFrame:
+                       target_t: int, wind_override: dict | None = None, snaps: pl.DataFrame | None = None) -> pl.DataFrame:
     """hist: scored player-weeks (project.load_history). upcoming: one row per player to
     project with player_id, player_display_name, position, team, opponent_team, season, week.
     Returns one row per player with the projection, its range, components, and drivers."""
@@ -75,6 +101,7 @@ def player_projections(hist: pl.DataFrame, upcoming: pl.DataFrame, sched_all: pl
     ctx = P.game_context(sched_all).drop("opp")
     m = m.join(ctx, on=["season", "week", "team"], how="left")
     m = m.join(opp, on=["opponent_team", "season", "week"], how="left")
+    m = add_snap_share(m, snaps)
     latest = _latest_opponent_rates(real, cols)
     tgt = m.filter(pl.col("is_target")).drop([f"o_{c}" for c in cols]).join(latest, on="opponent_team", how="left")
     if wind_override:
@@ -105,9 +132,11 @@ def player_projections(hist: pl.DataFrame, upcoming: pl.DataFrame, sched_all: pl
                 mu_tr = np.clip(np.exp(Xtr @ b), 0.2 * base_tr, 5 * base_tr + 0.05)
                 # Driver effects: points gained or lost from each context feature vs a neutral game.
                 neutral = Xte.copy()
-                neutral[:, 2:] = 0
+                neutral[:, 2:-1] = 0   # keep his own snap share; compare game context only
                 neutral[:, 4] = 0
                 for j in range(2, Xte.shape[1]):
+                    if not FEATURE_NAMES[j]:
+                        continue
                     only = neutral.copy()
                     only[:, j] = Xte[:, j]
                     drivers_pts[FEATURE_NAMES[j]] += (np.exp(only @ b) - np.exp(neutral @ b)) * W[c]
@@ -173,7 +202,8 @@ def _driver_text(drv: dict, i: int, row: dict) -> list[str]:
                "opponent": f"what {row['opponent_team']}'s defense allows",
                "home field": "home field" if row.get("home") else "playing on the road",
                "roof": "indoor game" if row.get("indoor") else "outdoor game",
-               "wind": f"wind ({row.get('wind_mph', 0):.0f} mph)"}[name]
+               "wind": f"wind ({row.get('wind_mph', 0):.0f} mph)",
+               "playing time": f"his recent snap share ({row.get('snap3', 0) * 100:.0f}%)"}[name]
         out.append(f"{sign}{abs(v):.1f} pts from {why}")
         if len(out) == 2:
             break
@@ -280,7 +310,12 @@ def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
         if w and not w.get("indoor") and w.get("wind_mph") is not None:
             wind[g["home_team"]] = wind[g["away_team"]] = w["wind_mph"]
 
-    players = player_projections(hist, up, sched_all, cfg, target_t, wind_override=wind)
+    try:
+        snaps = load_snaps(seasons)
+    except Exception as e:
+        log(f"[projections] snap counts unavailable: {e}")
+        snaps = None
+    players = player_projections(hist, up, sched_all, cfg, target_t, wind_override=wind, snaps=snaps)
 
     # Defenses
     dfr = []
