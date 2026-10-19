@@ -269,7 +269,7 @@ MATCHUPS_BODY = """
   <div>
     <p class="eyebrow">Projections, <span id="m-week">this week</span></p>
     <h1>The <span class="hl">Matchups</span></h1>
-    <p class="lede">Who is set up to sabotage this week, if they play. Every projection comes with a likely range, because this league runs on things going wrong. <a href="method.html#projections">How projections work</a>.</p>
+    <p class="lede">Who is set up to sabotage this week, if they play. Every projection comes with a likely range, because this league runs on things going wrong. <a href="method.html#projections">How projections work</a> · <a href="improvements.html">How they did last week</a>.</p>
   </div>
 </section>
 <section aria-labelledby="m-top-h">
@@ -282,6 +282,23 @@ MATCHUPS_BODY = """
   <div class="ggrid" id="m-games"></div>
 </section>
 <p class="hint">Forecasts from <a href="https://open-meteo.com/">Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>). Expected scores come from the betting spread and total and are shown as game context only.</p>
+"""
+
+IMPROVE_BODY = """
+<section class="phero">
+  <div>
+    <p class="eyebrow">Projection review</p>
+    <h1>Room for Improvement</h1>
+    <p class="pmeta">Every week, our five biggest projection misses, what drove them, and what we plan to test next. <a href="method.html#projections">How projections work</a>.</p>
+  </div>
+  <div class="ctl"><label for="i-week">Week</label><select id="i-week"></select></div>
+</section>
+<div id="i-week-body"><p class="loading">Loading&hellip;</p></div>
+<section aria-labelledby="i-tally-h">
+  <h2 id="i-tally-h">What keeps causing misses</h2>
+  <p class="hint">Every reviewed week so far. Some of each miss is plain randomness. Fumbles and interceptions especially do not repeat, so projections will never be perfect. The goal is to shrink the part we can explain.</p>
+  <div id="i-tally"></div>
+</section>
 """
 
 VIDEO_BODY = """
@@ -397,6 +414,7 @@ def projections_section() -> str:
 {"".join(rows)}
 </tbody></table></div>
 <p>The spread and total in the test are the lines nflverse records for each game. Live projections use the current lines, which can move before kickoff.</p>
+<p>Each week we review the five biggest misses on the <a href="improvements.html">projection review page</a>, with what drove them and what we plan to test.</p>
 <p>Forecasts come from <a href="https://open-meteo.com/">Open-Meteo.com</a>, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
 """
 
@@ -579,7 +597,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     a = out / "assets"
     v = {"css": _hash(a / "styles.css")}
     # In dependency order: each module's imports are already hashed when it is rewritten.
-    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare", "videos", "matchups"):
+    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare", "videos", "matchups", "improvements"):
         src = (a / f"{mod}.js").read_text()
         for dep in [d for d in v if d != "css"]:
             src = src.replace(f'from "./{dep}.js"', f'from "./{dep}.js?v={v[dep]}"')
@@ -588,7 +606,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
 
     def tag(html: str) -> str:
         html = html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
-        for mod in ("foot", "common", "app", "player", "defenses", "compare", "videos", "matchups"):
+        for mod in ("foot", "common", "app", "player", "defenses", "compare", "videos", "matchups", "improvements"):
             html = html.replace(f'src="assets/{mod}.js"', f'src="assets/{mod}.js?v={v[mod]}"')
         return html
     import json
@@ -620,6 +638,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     (out / "defenses.html").write_text(page("Defenses | Stars of Sabotage", DEFENSES_BODY, "defenses", "defenses"))
     (out / "compare.html").write_text(page("Compare players | Stars of Sabotage", COMPARE_BODY, "compare", "compare"))
     (out / "matchups.html").write_text(page("Matchups and projections | Stars of Sabotage", MATCHUPS_BODY, "matchups", "matchups"))
+    (out / "improvements.html").write_text(page("Projection review | Stars of Sabotage", IMPROVE_BODY, "matchups", "improvements"))
     (out / "video.html").write_text(page("Reel Good Sabotage | Stars of Sabotage", VIDEO_BODY, "video", "videos"))
 
 

@@ -30,6 +30,7 @@ import score  # noqa: E402
 import site_build  # noqa: E402
 import videos  # noqa: E402
 import projections  # noqa: E402
+import review  # noqa: E402
 import weather  # noqa: E402
 
 SEASON = int(os.environ.get("SOS_SEASON", "2026"))
@@ -232,6 +233,15 @@ def main(argv=None) -> int:
         bt = ROOT / "config" / "backtest.json"
         proj["backtest"] = json.loads(bt.read_text()) if bt.exists() else None
         _write(data_out / "projections.json", proj)
+
+    # Weekly review of projection misses (the Improvements page).
+    try:
+        _write(data_out / "improvements.json",
+               review.run(data_out, prev_data, SEASON, now, cfg, current["weeks"], proj if proj and proj.get("season") == SEASON else None))
+    except Exception as e:
+        print(f"[review] skipped: {e}")
+        if prev_data and (prev_data / "improvements.json").exists():
+            shutil.copy2(prev_data / "improvements.json", data_out / "improvements.json")
 
     # Stadium coordinates checked against Open-Meteo's geocoder whenever the table changes.
     import hashlib

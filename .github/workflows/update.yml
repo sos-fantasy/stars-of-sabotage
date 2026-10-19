@@ -50,6 +50,7 @@ jobs:
         id: build
         env:
           SOS_NOINDEX: "1"   # set to "0" when the site moves out of /preview
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}   # optional: Claude's weekly review write-up
           FORCE: ${{ github.event_name != 'schedule' && '--force' || '' }}
           BACKFILL: ${{ inputs.backfill && '--backfill' || '' }}
         run: python pipeline/run.py --out dist --prev deploy $FORCE $BACKFILL

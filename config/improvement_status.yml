@@ -1,0 +1,6 @@
+# Status of each proposed improvement on the projection review page.
+# status: proposed | testing | adopted | rejected (tested, no gain). note: short public note.
+# Updated by hand after a backtest. Nothing changes the live model without one.
+turnover_luck:
+  status: proposed
+  note: "Randomness; listed so the tally stays honest."
