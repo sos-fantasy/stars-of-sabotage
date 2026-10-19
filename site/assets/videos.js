@@ -54,14 +54,13 @@ async function init() {
     const vids = list.filter((v) => v.season === season && v.week === week);
     $("#v-main").innerHTML = vids.map(card).join("");
     $("#v-main").querySelectorAll("[data-play]").forEach((b) => (b.onclick = () => play(b)));
-    // The rest of that season, then the start of the season before it.
+    // The rest of the same season only.
     const same = weeks.filter((v) => v.season === season && key(v) !== k);
-    const older = weeks.filter((v) => v.season < season).slice(0, Math.max(0, 8 - same.length));
-    $("#v-more-h").textContent = same.length ? `More from ${season}` : "Earlier seasons";
-    $("#v-more").innerHTML = [...same, ...older].map((v) =>
+    $("#v-more-h").textContent = `More from ${season}`;
+    $("#v-more").innerHTML = same.map((v) =>
       `<a class="vtile" href="?season=${v.season}&week=${v.week}" data-k="${key(v)}">
         <img src="${thumb(v.id)}" alt="" loading="lazy" width="480" height="360"><span>${v.season} ${wkLabel(v.week)}</span></a>`).join("");
-    $("#v-more-h").hidden = weeks.length < 2;
+    $("#v-more-h").hidden = same.length === 0;
     culprits(season, week);
   }
   window.addEventListener("popstate", () => location.reload());
