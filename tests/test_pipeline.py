@@ -178,3 +178,19 @@ def test_multiple_pick_sixes_use_their_own_list():
 def test_owner_edits_applied():
     assert stories.TEMPLATES["top"][5].startswith("It must be getting close to Halloween")
     assert stories.TEMPLATES["top"][16] == "{name} plays quarterback the way a toddler plays Jenga. {line}. {pts} points."
+
+
+def test_player_files_mix_old_and_new_season_files(tmp_path):
+    # A season file written before n_targets existed and one written after must load together.
+    import json
+    import export
+    base = ["player_id", "player_display_name", "position", "team", "opponent_team", "week"]
+    old_cols = [c for c in export.PLAYER_COLS if c != "n_targets"]
+    row = lambda cols, w: [("P1" if c == "player_id" else "Pat" if c == "player_display_name" else "WR" if c == "position"
+                            else "AAA" if c == "team" else "BBB" if c == "opponent_team" else w if c == "week" else 1) for c in cols]
+    (tmp_path / "scores-2025.json").write_text(json.dumps({"cols": old_cols, "rows": [row(old_cols, 1)]}))
+    (tmp_path / "scores-2026.json").write_text(json.dumps({"cols": export.PLAYER_COLS, "rows": [row(export.PLAYER_COLS, 1)]}))
+    files, index = export.player_files(tmp_path, [2025, 2026])
+    seasons = files["P1"]["seasons"]
+    tg = seasons["cols"].index("n_targets")
+    assert [r[tg] for r in seasons["rows"]] == [None, 1]

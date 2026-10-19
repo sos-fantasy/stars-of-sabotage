@@ -186,7 +186,7 @@ def player_files(data_dir, seasons: list[int]) -> tuple[dict[str, dict], dict]:
                 ctx.append(G.select(pl.lit(s).alias("season"), "week", pl.col(side).alias("team"),
                                     pl.lit(1 if side == "home_team" else 0).alias("home"),
                                     pl.col("roof"), pl.col("wind").cast(pl.Float64), pl.col("gameday")))
-    P = pl.concat(frames)
+    P = pl.concat(frames, how="diagonal_relaxed")   # older files gain n_targets at the end
     if ctx:
         C = pl.concat(ctx).unique(["season", "week", "team"])
         P = P.join(C, on=["season", "week", "team"], how="left")

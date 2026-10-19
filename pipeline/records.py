@@ -191,7 +191,7 @@ def _load(data_dir: Path, seasons: list[int]) -> tuple[pl.DataFrame, pl.DataFram
         P.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None).with_columns(pl.lit(s).alias("season")))
         d = json.loads((data_dir / f"defense-{s}.json").read_text())
         D.append(pl.DataFrame(d["rows"], schema=d["cols"], orient="row", infer_schema_length=None).with_columns(pl.lit(s).alias("season")))
-    return pl.concat(P), pl.concat(D)
+    return pl.concat(P, how="diagonal_relaxed"), pl.concat(D, how="diagonal_relaxed")   # older files lack n_targets
 
 
 def _per_unit(cfg: dict, path) -> int | None:
