@@ -14,6 +14,7 @@ async function init() {
   } catch (e) {
     return notFound();
   }
+  if (meta) nextGame();   // meta arrived first; otherwise loadMeta's callback runs it
   seasons = toObjs(P.seasons);
   weeks = toObjs(P.weeks);
   document.title = `${P.name} | Stars of Sabotage`;
@@ -210,8 +211,10 @@ function splits(wk) {
 }
 
 // ---------- next game ----------
+let nextDone = false;
 async function nextGame() {
-  if (!P || !meta || P.last !== meta.season) return;
+  if (!P || !meta || P.last !== meta.season || nextDone) return;
+  nextDone = true;
   try {
     const g = toObjs(await getJSON(`data/games-${meta.season}.json?v=${dataVersion()}`));
     const n = g.find((x) => (x.home_team === P.team || x.away_team === P.team) && (x.home_score === null || x.home_score === undefined));
@@ -225,6 +228,28 @@ async function nextGame() {
     $("#p-next").innerHTML = `<p class="eyebrow">Next up</p><p class="next">Week ${n.week} ${home ? "vs" : "at"} <strong>${esc(NICK[opp] || opp)}</strong> · ${day}${t ? " · " + t : ""}${roof ? " · " + roof : ""}</p>`;
     $("#p-next").hidden = false;
   } catch (e) { /* no schedule: leave hidden */ }
+  projection();
+}
+
+// This week's projection, if the player is on the Matchups list.
+const COMP = { n_incomplete: "incompletions", n_sacks: "sacks", n_carries: "carries", n_receptions: "catches",
+  n_fumbles: "fumbles", n_fumbles_lost: "fumbles lost", n_ints: "interceptions", n_pick_sixes: "pick sixes" };
+async function projection() {
+  try {
+    const d = await getJSON(`data/projections.json?v=${meta.data_hash}-${Math.floor(Date.now() / 300000)}`);
+    const p = (d.players || []).find((x) => x.id === P.id);
+    if (!p) return;
+    const comps = Object.entries(p.components || {}).filter(([, v]) => v >= 0.1).sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `${fmt(v, 1)} ${COMP[k]}`).join(", ");
+    const box = document.createElement("div");
+    box.className = "pproj";
+    box.innerHTML = `<p class="eyebrow">Week ${d.week} projection, if he plays</p>
+      <p><span class="big">${fmt(p.proj, 1)}</span>likely range ${fmt(p.lo)} to ${fmt(p.hi)}</p>
+      ${comps ? `<p class="dim">${esc(comps)}</p>` : ""}
+      ${(p.drivers || []).map((x) => `<p class="dim">${esc(x)}</p>`).join("")}
+      <p class="dim"><a href="matchups.html">All matchups</a> · <a href="method.html#projections">How projections work</a></p>`;
+    $("#p-next").after(box);
+  } catch (e) { /* no projections this week */ }
 }
 
 init();

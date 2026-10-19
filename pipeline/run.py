@@ -21,6 +21,7 @@ from pathlib import Path
 
 import polars as pl
 
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import export  # noqa: E402
 import records  # noqa: E402
@@ -28,6 +29,8 @@ import schedule  # noqa: E402
 import score  # noqa: E402
 import site_build  # noqa: E402
 import videos  # noqa: E402
+import projections  # noqa: E402
+import weather  # noqa: E402
 
 SEASON = int(os.environ.get("SOS_SEASON", "2026"))
 FIRST_SEASON = 1999   # nflverse play-by-play starts here
@@ -216,6 +219,33 @@ def main(argv=None) -> int:
         print(f"[videos] skipped: {e}")
         vids = prev_videos.get("videos", [])
     _write(data_out / "videos.json", {"videos": vids, "play_on_site": videos.play_on_site()})
+
+    # Projections for the coming week. A failure here never stops the score update.
+    try:
+        proj = projections.build(data_out, SEASON, now, cfg)
+    except Exception as e:
+        print(f"[projections] skipped: {e}")
+        proj = None
+    if proj is None and prev_data:
+        proj = _read_json(prev_data / "projections.json")
+    if proj:
+        bt = ROOT / "config" / "backtest.json"
+        proj["backtest"] = json.loads(bt.read_text()) if bt.exists() else None
+        _write(data_out / "projections.json", proj)
+
+    # Stadium coordinates checked against Open-Meteo's geocoder whenever the table changes.
+    import hashlib
+    st_hash = hashlib.sha256((ROOT / "config" / "stadiums.csv").read_bytes()).hexdigest()[:12]
+    st_prev = _read_json(prev_data / "stadium_check.json", {}) if prev_data else {}
+    if st_prev.get("hash") == st_hash:
+        _write(data_out / "stadium_check.json", st_prev)
+    else:
+        try:
+            rows = weather.check_stadiums()
+            if any(r["km_from_city"] is not None for r in rows):   # skip a run where the geocoder was unreachable
+                _write(data_out / "stadium_check.json", {"hash": st_hash, "rows": rows})
+        except Exception as e:
+            print(f"[weather] stadium check skipped: {e}")
 
     recs = records.build(data_out, [s["season"] for s in seasons], cfg, SEASON, weeks)
     # Record alerts on the home page: anything still pending corrections, plus any

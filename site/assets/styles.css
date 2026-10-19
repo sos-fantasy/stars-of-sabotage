@@ -434,3 +434,22 @@ table.cmp tr.totrow th[scope="row"] { font-size: 15px; }
   .site-head nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
   .site-head nav a { text-align: center; padding: 7px 2px; font-size: 11px; }
 }
+
+/* matchups page */
+.mtabs { margin: 6px 0 10px; }
+.ggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; margin-top: 10px; }
+.gcard { background: var(--bg-2); border: 1px solid var(--line); padding: 12px 14px; }
+.gcard h3 { margin: 0 0 4px; font: 400 22px/1.1 var(--display); text-transform: uppercase; }
+.gmeta { margin: 0 0 3px; color: var(--muted); font-size: 12px; }
+.gtop { list-style: none; margin: 10px 0 6px; padding: 0; }
+.gtop li { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); }
+.gtop li .dim { grid-column: 1; font-size: 11px; }
+.gtop li b { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 400 22px/1 var(--display); color: var(--yellow); }
+.gdef { margin: 0; font-size: 12px; color: var(--muted); }
+.pproj { margin: 12px 0 0; padding: 10px 14px; background: var(--bg-2); border-left: 3px solid var(--rust); }
+.pproj .big { font: 400 30px/1 var(--display); color: var(--yellow); margin-right: 8px; }
+.pproj p { margin: 2px 0; }
+@media (max-width: 720px) {
+  .site-head nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .site-head nav a { font-size: 10px; letter-spacing: 0; padding: 7px 1px; }
+}

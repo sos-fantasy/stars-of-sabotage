@@ -507,3 +507,24 @@ First run, October 18: weeks 1 to 5 found, all embeddable, all from NFL Rush.
 The page shows a thumbnail and loads the youtube-nocookie.com player only on press, a "watch on YouTube" card if embedding is off, the week's top five Sabotage scorers, and earlier weeks.
 
 Phase 3 exit criteria: a manual add takes one line (met). "The latest video appears for its week without manual work" gets its first real test when the Week 6 video is posted.
+
+## 28. Projections and Matchups (Phase 4, October 19, 2026)
+
+Built on the `phase4` branch: `pipeline/project.py` (history, baselines, count model, game context, Poisson and logistic fits), `pipeline/projections.py` (the weekly build), `pipeline/weather.py` with `config/stadiums.csv`, `pipeline/backtest.py`, `matchups.html`, a projection box on player pages, and a "How projections work" section on the method page.
+
+Walk-forward backtest of the production code, 2021 to 2025 regular seasons (`config/backtest.json`):
+
+| Position | Avg miss, model | Season avg | Last 4 | Rank match, model | Season avg | Inside 10-90 range |
+|---|---|---|---|---|---|---|
+| QB | 19.54 | 20.37 | 21.00 | 0.31 | 0.26 | 82% |
+| RB | 5.38 | 5.47 | 5.54 | 0.75 | 0.72 | 87% |
+| WR | 3.60 | 3.77 | 3.82 | 0.61 | 0.58 | 90% |
+| TE | 2.94 | 3.04 | 3.14 | 0.59 | 0.56 | 90% |
+| K | 7.49 | 7.49 | 7.54 | 0.04 | 0.04 | 93% |
+| DEF | 7.05 | 8.12 | | 0.37 | 0.10 | |
+
+Kickers ship the season-to-date baseline, labeled: a distance, wind and kicker-skill model scored 8.05 average miss against the baseline's 7.50 and ran high (7.1 projected vs 5.7 actual per game).
+
+Players: projected only for players with a game for their current team in its last three games, one quarterback per team (most incompletions plus sacks in the latest game), minus anyone listed Out, Doubtful or IR for that week. The preview moves to the next week once the current week is down to its last two games.
+
+Weather: Open-Meteo free tier, non-commercial, under 10,000 calls a day, CC BY 4.0 (terms checked October 19, 2026 at open-meteo.com/en/terms). Stadium coordinates are checked against Open-Meteo's geocoder on the first run after the table changes (`data/stadium_check.json`). International venues carry a roof override, since nflverse lists some open-air stadiums as domes.
