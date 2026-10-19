@@ -115,7 +115,8 @@ def player_projections(hist: pl.DataFrame, upcoming: pl.DataFrame, sched_all: pl
             total_te += mu_te * W[c]
             total_tr += mu_tr * W[c]
         lo, hi = _ranges(total_tr, tr["sabotage_pts"].to_numpy(), total_te)
-        rows = te.select("player_id", "player_display_name", "position", "team", "opponent_team", "home", "game_id")
+        rows = te.select("player_id", "player_display_name", "position", "team", "opponent_team", "home", "game_id",
+                         *(["slot"] if "slot" in te.columns else []))
         rows = rows.with_columns(pl.Series("proj", np.round(total_te, 1)), pl.Series("lo", lo), pl.Series("hi", hi),
                                  pl.lit("model").alias("method"))
         comps = [{c: round(float(comp[c][i]), 2) for c in use} for i in range(te.height)]
@@ -127,7 +128,8 @@ def player_projections(hist: pl.DataFrame, upcoming: pl.DataFrame, sched_all: pl
     if not k.is_empty():
         trk = train.filter(pl.col("pg") == "K")
         lo, hi = _ranges(trk["b_std"].fill_null(0).to_numpy(), trk["sabotage_pts"].to_numpy(), k["b_std"].fill_null(0).to_numpy())
-        out.append(k.select("player_id", "player_display_name", "position", "team", "opponent_team", "home", "game_id")
+        out.append(k.select("player_id", "player_display_name", "position", "team", "opponent_team", "home", "game_id",
+                            *(["slot"] if "slot" in k.columns else []))
                    .with_columns(pl.Series("proj", np.round(k["b_std"].fill_null(0).to_numpy(), 1)), pl.Series("lo", lo),
                                  pl.Series("hi", hi), pl.lit("season average").alias("method"),
                                  pl.Series("components", [{} for _ in range(k.height)], dtype=pl.Object),
@@ -249,33 +251,23 @@ def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
     hist = P.load_history(data_out, [s for s in seasons if (data_out / f"scores-{s}.json").exists()])
     target_t = season * 100 + wk
 
-    # Who to project: players with a game for this team in its last three games this season.
-    cur = hist.filter(pl.col("season") == season)
-    last_team = hist.sort("t").group_by("player_id").agg(pl.col("team").last().alias("cur_team"))
-    recent = (cur.join(cur.group_by("team").agg(pl.col("week").unique().sort().tail(3).alias("_wks")), on="team")
-              .filter(pl.col("week").is_in(pl.col("_wks").list.explode()).over("team") if False else
-                      pl.col("_wks").list.contains(pl.col("week")))
-              .join(last_team, on="player_id").filter(pl.col("team") == pl.col("cur_team"))
-              .group_by("player_id").agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last()))
     try:
         inj = nfl.load_injuries(season).filter((pl.col("week") == wk) & pl.col("report_status").is_in(list(OUT_STATUSES)))
         out_ids = set(inj["gsis_id"].drop_nulls().to_list())
     except Exception as e:
         log(f"[projections] injuries unavailable: {e}")
         out_ids = set()
-    # One quarterback per team: the one who threw the most (incompletions plus sacks) in
-    # the team's latest game, skipping anyone ruled out. Backups otherwise crowd the list.
-    qb_load = (cur.filter(pl.col("pg") == "QB").with_columns((pl.col("n_incomplete") + pl.col("n_sacks")).alias("_load"))
-               .sort(["team", "t", "_load"], descending=[False, True, True]))
-    starters = {}
-    for r in qb_load.iter_rows(named=True):
-        if r["team"] not in starters and r["player_id"] not in out_ids and r["_load"] > 0:
-            starters[r["team"]] = r["player_id"]
-    recent = recent.filter((pl.col("position") != "QB") | pl.col("player_id").is_in(list(starters.values())))
+    # Who to project: each team's starters from its latest depth chart (QB1, RB1-2,
+    # WR1-3, TE1-2, K), skipping anyone ruled out and moving the next man up.
+    try:
+        recent = starters_from_depth(nfl.load_depth_charts(season), out_ids)
+    except Exception as e:
+        log(f"[projections] depth charts unavailable ({e}); using recent games instead")
+        recent = _recent_players(hist, season, out_ids)
     sides = pl.concat([
         games.select("game_id", pl.col("home_team").alias("team"), pl.col("away_team").alias("opponent_team")),
         games.select("game_id", pl.col("away_team").alias("team"), pl.col("home_team").alias("opponent_team"))])
-    up = (recent.filter(~pl.col("player_id").is_in(list(out_ids))).join(sides, on="team")
+    up = (recent.join(sides, on="team")
           .with_columns(pl.lit(season).alias("season"), pl.lit(wk).alias("week")))
 
     # Weather for outdoor games; the forecast wind feeds the model.
@@ -316,6 +308,7 @@ def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
     plist = []
     for r in players.sort("proj", descending=True).iter_rows(named=True):
         plist.append({"id": r["player_id"], "name": r["player_display_name"], "pos": r["position"], "team": r["team"],
+                      "slot": r.get("slot"),
                       "opp": r["opponent_team"], "home": int(r["home"] or 0), "game_id": r["game_id"],
                       "proj": r["proj"], "lo": r["lo"], "hi": r["hi"], "method": r["method"],
                       "components": r["components"], "drivers": r["drivers"]})
@@ -326,6 +319,46 @@ def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
         f"{sum(1 for g in out_games if g['weather'] and not g['weather'].get('indoor'))} forecasts")
     return {"season": season, "week": wk, "generated": now.isoformat(timespec="minutes"),
             "games": out_games, "players": plist, "defenses": dlist}
+
+
+DEPTH = [("QB", "QB", 1), ("RB", "RB", 2), ("WR", "WR", 3), ("TE", "TE", 2), ("PK", "K", 1)]
+
+
+def starters_from_depth(dc: pl.DataFrame, out_ids: set) -> pl.DataFrame:
+    """Starters from each team's most recent depth chart. Rank order within a position;
+    a player ruled out is skipped and the next one moves up."""
+    latest = dc.group_by("team").agg(pl.col("dt").max().alias("_m"))
+    d = (dc.join(latest, on="team").filter((pl.col("dt") == pl.col("_m")) & pl.col("gsis_id").is_not_null())
+         .unique(["team", "pos_abb", "gsis_id"]).sort(["team", "pos_abb", "pos_rank"]))
+    rows = []
+    for abb, pos, n in DEPTH:
+        sub = d.filter(pl.col("pos_abb") == abb)
+        for team, grp in sub.group_by("team"):
+            picked = [r for r in grp.sort("pos_rank").iter_rows(named=True) if r["gsis_id"] not in out_ids][:n]
+            for i, r in enumerate(picked):
+                rows.append({"player_id": r["gsis_id"], "player_display_name": r["player_name"], "position": pos,
+                             "team": team[0], "slot": pos if n == 1 else f"{pos}{i + 1}"})
+    return pl.DataFrame(rows)
+
+
+def _recent_players(hist, season, out_ids) -> pl.DataFrame:
+    """Fallback when depth charts are missing: anyone with a game for his current team in
+    its last three games, one quarterback per team (most passes in the latest game)."""
+    cur = hist.filter(pl.col("season") == season)
+    last_team = hist.sort("t").group_by("player_id").agg(pl.col("team").last().alias("cur_team"))
+    recent = (cur.join(cur.group_by("team").agg(pl.col("week").unique().sort().tail(3).alias("_wks")), on="team")
+              .filter(pl.col("_wks").list.contains(pl.col("week")))
+              .join(last_team, on="player_id").filter(pl.col("team") == pl.col("cur_team"))
+              .group_by("player_id").agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last()))
+    qb_load = (cur.filter(pl.col("pg") == "QB").with_columns((pl.col("n_incomplete") + pl.col("n_sacks")).alias("_load"))
+               .sort(["team", "t", "_load"], descending=[False, True, True]))
+    qbs = {}
+    for r in qb_load.iter_rows(named=True):
+        if r["team"] not in qbs and r["player_id"] not in out_ids and r["_load"] > 0:
+            qbs[r["team"]] = r["player_id"]
+    return (recent.filter(~pl.col("player_id").is_in(list(out_ids)))
+            .filter((pl.col("position") != "QB") | pl.col("player_id").is_in(list(qbs.values())))
+            .with_columns(pl.lit(None, dtype=pl.Utf8).alias("slot")))
 
 
 def _r(x):

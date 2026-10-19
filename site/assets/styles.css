@@ -437,7 +437,7 @@ table.cmp tr.totrow th[scope="row"] { font-size: 15px; }
 
 /* matchups page */
 .mtabs { margin: 6px 0 10px; }
-.ggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; margin-top: 10px; }
+.ggrid { grid-auto-flow: dense; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; margin-top: 10px; }
 .gcard { background: var(--bg-2); border: 1px solid var(--line); padding: 12px 14px; }
 .gcard h3 { margin: 0 0 4px; font: 400 22px/1.1 var(--display); text-transform: uppercase; }
 .gmeta { margin: 0 0 3px; color: var(--muted); font-size: 12px; }
@@ -453,3 +453,20 @@ table.cmp tr.totrow th[scope="row"] { font-size: 15px; }
   .site-head nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .site-head nav a { font-size: 10px; letter-spacing: 0; padding: 7px 1px; }
 }
+/* matchups game cards: summary shows QBs and defenses, opening shows every starter */
+details.gcard > summary { list-style: none; cursor: pointer; }
+details.gcard > summary::-webkit-details-marker { display: none; }
+details.gcard:hover { border-color: var(--line-2); }
+details.gcard[open] { grid-column: 1 / -1; border-color: var(--yellow); }
+.gqb { list-style: none; margin: 10px 0 4px; padding: 0; }
+.gqb li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 8px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--line); }
+.gqb .slot, .glist .slot { color: var(--muted); font-size: 11px; letter-spacing: .08em; }
+.gqb b.qb { font: 400 20px/1 var(--display); color: var(--yellow); margin-left: 6px; }
+.gmore { margin: 6px 0 0; font-size: 12px; color: var(--yellow); }
+.gmore::after { content: " ▾"; }
+details[open] .gmore::after { content: " ▴"; }
+.gfull { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 8px 28px; margin-top: 8px; }
+.gteam { margin: 0 0 4px; font: 400 18px/1 var(--display); text-transform: uppercase; }
+.glist { list-style: none; margin: 0; padding: 0; }
+.glist li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 8px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--line); }
+.glist b { font: 400 20px/1 var(--display); color: var(--yellow); }

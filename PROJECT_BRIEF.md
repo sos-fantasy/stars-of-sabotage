@@ -525,6 +525,6 @@ Walk-forward backtest of the production code, 2021 to 2025 regular seasons (`con
 
 Kickers ship the season-to-date baseline, labeled: a distance, wind and kicker-skill model scored 8.05 average miss against the baseline's 7.50 and ran high (7.1 projected vs 5.7 actual per game).
 
-Players: projected only for players with a game for their current team in its last three games, one quarterback per team (most incompletions plus sacks in the latest game), minus anyone listed Out, Doubtful or IR for that week. The preview moves to the next week once the current week is down to its last two games.
+Players: each team's starters from its latest nflverse depth chart (QB1, RB1-2, WR1-3, TE1-2, K; owner, October 19), skipping anyone listed Out, Doubtful or IR and moving the next man up. If depth charts are unavailable, players with a game in the team's last three games, one QB per team. Game cards on the Matchups page show each QB and defense and open to every starter. The preview moves to the next week once the current week is down to its last two games.
 
 Weather: Open-Meteo free tier, non-commercial, under 10,000 calls a day, CC BY 4.0 (terms checked October 19, 2026 at open-meteo.com/en/terms). Stadium coordinates are checked against Open-Meteo's geocoder on the first run after the table changes (`data/stadium_check.json`). International venues carry a roof override, since nflverse lists some open-air stadiums as domes.

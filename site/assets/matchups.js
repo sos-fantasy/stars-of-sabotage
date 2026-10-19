@@ -72,22 +72,32 @@ function why(p) {
   return [parts.join(", "), ...d].filter(Boolean).join(". ");
 }
 
+const SLOT_ORDER = ["QB", "RB1", "RB2", "WR1", "WR2", "WR3", "TE1", "TE2", "K"];
 function games() {
   const byGame = new Map();
   for (const p of data.players) { if (!byGame.has(p.game_id)) byGame.set(p.game_id, []); byGame.get(p.game_id).push(p); }
   const defs = new Map(data.defenses.map((d) => [`${d.game_id}-${d.team}`, d]));
+  const line = (p) => `<li><span class="slot">${esc(p.slot || p.pos)}</span><a class="plink" href="player.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a><b>${fmt(p.proj)}</b></li>`;
+  const side = (g, team) => {
+    const ps = (byGame.get(g.game_id) || []).filter((p) => p.team === team)
+      .sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
+    const d = defs.get(`${g.game_id}-${team}`);
+    return `<div class="gside"><p class="gteam">${esc(NICK[team] || team)}</p><ol class="glist">${ps.map(line).join("")}
+      ${d ? `<li><span class="slot">D</span><a class="plink" href="defenses.html?team=${team}">${esc(NICK[team] || team)} defense</a><b>${fmt(d.proj)}</b></li>` : ""}</ol></div>`;
+  };
   $("#m-games").innerHTML = data.games.map((g) => {
-    const top3 = (byGame.get(g.game_id) || []).slice(0, 3);
+    const qbs = (byGame.get(g.game_id) || []).filter((p) => p.slot === "QB" || (!p.slot && p.pos === "QB"));
+    const qbFor = (team) => qbs.find((p) => p.team === team);
     const dh = defs.get(`${g.game_id}-${g.home}`), da = defs.get(`${g.game_id}-${g.away}`);
-    return `<article class="gcard">
+    const row = (team, d) => { const q = qbFor(team); return `<li><span class="slot">${esc(team)}</span>${q ? `<span>${esc(q.name)} <b class="qb">${fmt(q.proj)}</b></span>` : "<span></span>"}<span class="dim">D ${d ? fmt(d.proj) : ""}</span></li>`; };
+    return `<details class="gcard"><summary>
       <h3>${esc(NICK[g.away] || g.away)} <span class="dim">at</span> ${esc(NICK[g.home] || g.home)}</h3>
       <p class="gmeta">${kickoff(g)} · ${esc(g.stadium || "")}</p>
       <p class="gmeta">${esc(sky(g))}</p>
       ${g.home_implied !== null && g.away_implied !== null ? `<p class="gmeta">Expected score from the spread and total: ${esc(g.away)} ${fmt(g.away_implied)}, ${esc(g.home)} ${fmt(g.home_implied)}</p>` : ""}
-      <ol class="gtop">${top3.map((p) => `<li><a class="plink" href="player.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a>
-        <span class="dim">${esc(p.pos)} · ${esc(p.team)}</span><b>${fmt(p.proj)}</b></li>`).join("")}</ol>
-      <p class="gdef">Defenses: ${da ? `${esc(g.away)} ${fmt(da.proj)}` : ""}${da && dh ? " · " : ""}${dh ? `${esc(g.home)} ${fmt(dh.proj)}` : ""}</p>
-    </article>`;
+      <ol class="gqb">${row(g.away, da)}${row(g.home, dh)}</ol>
+      <p class="gmore">All starters</p></summary>
+      <div class="gfull">${side(g, g.away)}${side(g, g.home)}</div></details>`;
   }).join("");
 }
 
