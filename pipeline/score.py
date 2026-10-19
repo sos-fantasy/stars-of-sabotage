@@ -99,6 +99,12 @@ def fumbles(pbp: pl.DataFrame, include_returns: bool) -> pl.DataFrame:
     return df.group_by(["game_id", "player_id"]).agg(pl.col("fum").sum(), pl.col("fum_lost").sum())
 
 
+def _targets_tracked(stats: pl.DataFrame) -> bool:
+    if "targets" not in stats.columns or "receptions" not in stats.columns:
+        return False
+    return (stats["targets"].fill_null(0).sum() or 0) >= (stats["receptions"].fill_null(0).sum() or 0)
+
+
 def score_players(stats: pl.DataFrame, pbp: pl.DataFrame, cfg: dict) -> pl.DataFrame:
     o, k, it = cfg["offense"], cfg["kicker"], cfg["interpretation"]
     df = (
@@ -127,6 +133,10 @@ def score_players(stats: pl.DataFrame, pbp: pl.DataFrame, cfg: dict) -> pl.DataF
         pl.col("sacks_suffered").alias("n_sacks"),
         pl.col("carries").alias("n_carries"),
         pl.col("receptions").alias("n_receptions"),
+        # Targets are not scored. Shown on the site as a sign of how often a team throws his way.
+        # nflverse has no target counts for 2003 to 2008 (fewer targets than catches league-wide),
+        # so a season like that gets nulls and the site shows a blank.
+        (pl.col("targets").fill_null(0) if _targets_tracked(stats) else pl.lit(None, dtype=pl.Int64)).alias("n_targets"),
         fum.alias("n_fumbles"),
         fum_lost.alias("n_fumbles_lost"),
         pl.col("passing_interceptions").alias("n_ints"),

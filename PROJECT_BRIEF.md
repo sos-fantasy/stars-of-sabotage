@@ -556,3 +556,7 @@ Only facts known before kickoff can feed projections. Final score vs the spread 
 Pass attempts are not projected separately yet; "project opportunities directly" stays on the review page as a proposal.
 
 News: owner suggested Ian Rapoport, Adam Schefter and NFL official accounts on X, followed from the Stars of Sabotage account. Open question; see the chat of October 19.
+
+## 31. Targets (owner, October 19, 2026)
+
+Targets are shown, not scored: a "Tgt" column in the leaderboard's Stats view (totals and per game) and in player game logs. Source: nflverse player stats `targets`, carried as `n_targets` in every score file. nflverse has no target counts for 2003 to 2008 (league-wide targets below catches; checked October 19, 2026), and play-by-play cannot rebuild them because incompletions in those seasons have no receiver. Those seasons store null and show a blank; any season or career total that includes such a game is blank rather than short. Derived-from-play-by-play targets matched nflverse exactly for 2010, as a check. Sabotage points are unchanged (2026 and 2005 rescored with identical points). Needs one full backfill run after the merge so every season file gets the column.

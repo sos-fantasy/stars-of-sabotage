@@ -447,6 +447,7 @@ METHOD_BODY = """
 <p>Fumbles count for any offensive player, on any play where his team has the ball or he is returning a kick or punt. That includes a quarterback who drops or botches a snap. A lost fumble goes to the last offensive player who lost control of the ball. Fumbles by defensive players never count.</p>
 <p>Field goal distance is the full kick distance: from the spot of the hold to the goalposts. It is the number you hear on the broadcast.</p>
 <p>Blocked field goals and blocked extra points count as misses. A blocked 23-yard try scores the same as a missed 23-yard try.</p>
+<p>Targets (passes thrown his way) are shown in the Stats view and game logs but score nothing. They show how often a team tries to get a player the ball. nflverse has no target counts for 2003 to 2008, so those seasons show a blank.</p>
 <p>Rushing attempts include quarterback kneel-downs, because official NFL statistics record them as carries. Spikes to stop the clock count as incomplete passes for the same reason.</p>
 
 <h2>Points allowed, and why it is not always the final score</h2>

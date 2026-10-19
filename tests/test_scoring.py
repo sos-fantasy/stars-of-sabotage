@@ -226,3 +226,29 @@ def test_split_components_not_stacked():
                               score.load_config(stack_fumble_lost=False, stack_pick_six=False)).row(0, named=True)
     assert (out["pts_fumble"], out["pts_fumble_lost"], out["pts_int"], out["pts_pick_six"]) == (7, 10, 10, 21)
     assert out["sabotage_pts"] == 87
+
+
+def test_targets_carried_but_not_scored():
+    # 10 targets, 3 catches: 3*2 = 6 points. Targets add nothing to the score and come
+    # through as n_targets for the site.
+    wr = stat_row("WR9", position="WR", receptions=3, targets=10)
+    scored = score.score_players(pl.DataFrame([wr]), pbp([]), score.load_config())
+    r = scored.filter(pl.col("player_id") == "WR9").row(0, named=True)
+    assert r["n_targets"] == 10 and r["sabotage_pts"] == 6
+
+
+def test_targets_missing_column_is_zero():
+    # Old stat files without a targets column still score; targets are blank (not tracked).
+    wr = stat_row("WR8", position="WR", receptions=2)
+    scored = score.score_players(pl.DataFrame([wr]), pbp([]), score.load_config())
+    r = scored.filter(pl.col("player_id") == "WR8").row(0, named=True)
+    assert r["n_targets"] is None and r["sabotage_pts"] == 4
+
+
+def test_targets_blank_when_season_not_tracked():
+    # A season where targets are fewer than catches (nflverse 2003-2008) is untracked:
+    # n_targets comes through as null, and the score is unchanged (3 catches = 6).
+    wr = stat_row("WR7", position="WR", receptions=3, targets=0)
+    scored = score.score_players(pl.DataFrame([wr]), pbp([]), score.load_config())
+    r = scored.filter(pl.col("player_id") == "WR7").row(0, named=True)
+    assert r["n_targets"] is None and r["sabotage_pts"] == 6

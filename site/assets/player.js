@@ -174,10 +174,12 @@ const venue = (r) => {
 
 function gameLog(wk, keys) {
   const cols = keys.map((k) => STAT[k]);
-  const head = `<tr><th>Wk</th><th>Opp</th><th>Venue</th>${cols.map((c) => `<th class="num" title="${esc(c.label)}">${esc(short(c.label))}</th>`).join("")}<th class="num total">Pts</th></tr>`;
+  // Targets are not scored, but show how often the team throws his way.
+  const tgt = wk.some((r) => r.n_targets) && !keys.every((k) => k === "fgx" || k === "patx");
+  const head = `<tr><th>Wk</th><th>Opp</th><th>Venue</th>${cols.map((c) => `<th class="num" title="${esc(c.label)}">${esc(short(c.label))}</th>`).join("")}${tgt ? `<th class="num dim" title="Targets (not scored)">Tgt</th>` : ""}<th class="num total">Pts</th></tr>`;
   const body = wk.slice().sort((a, b) => a.week - b.week).map((r) =>
     `<tr><td>${r.week}</td><td>${r.home === 0 ? "@" : "vs"} ${esc(r.opponent_team)}</td><td class="dim">${esc(venue(r))}</td>
-     ${cols.map((c) => `<td class="num${r[c.n] ? "" : " zero"}">${r[c.n]}</td>`).join("")}<td class="num total">${r.sabotage_pts}</td></tr>`).join("");
+     ${cols.map((c) => `<td class="num${r[c.n] ? "" : " zero"}">${r[c.n]}</td>`).join("")}${tgt ? `<td class="num dim">${r.n_targets ?? ""}</td>` : ""}<td class="num total">${r.sabotage_pts}</td></tr>`).join("");
   return `<div class="table-wrap plain"><table>${head}${body}</table></div>`;
 }
 function seasonTable() {

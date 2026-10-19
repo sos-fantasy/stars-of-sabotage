@@ -24,7 +24,8 @@ def load_history(data_dir: Path, seasons: list[int]) -> pl.DataFrame:
     for s in seasons:
         d = json.loads((Path(data_dir) / f"scores-{s}.json").read_text())
         frames.append(pl.DataFrame(d["rows"], schema=d["cols"], orient="row", infer_schema_length=None)
-                      .with_columns(pl.lit(s).alias("season")))
+                      .with_columns(pl.lit(s).alias("season"))
+                      .with_columns([pl.col(c).cast(pl.Int64) for c in ("n_targets",) if c in d["cols"]]))
     df = pl.concat(frames, how="diagonal_relaxed")
     df = df.with_columns(pl.col("position").replace_strict(POS_GROUP, default=None).alias("pg"))
     df = df.filter(pl.col("pg").is_not_null())

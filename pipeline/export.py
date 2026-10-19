@@ -15,12 +15,27 @@ PLAYER_POSITIONS = ["QB", "RB", "FB", "WR", "TE", "K"]
 # Column order for scores/{season}.json. The site reads these by name.
 PLAYER_COLS = [
     "player_id", "player_display_name", "position", "team", "opponent_team", "week",
-    "n_incomplete", "n_sacks", "n_carries", "n_receptions", "n_fumbles", "n_fumbles_lost",
+    "n_incomplete", "n_sacks", "n_carries", "n_receptions", "n_targets", "n_fumbles", "n_fumbles_lost",
     "n_ints", "n_pick_sixes", "n_fg_missed", "n_pat_missed",
     "pts_incomplete", "pts_sacks", "pts_carries", "pts_receptions", "pts_fumble", "pts_fumble_lost",
     "pts_int", "pts_pick_six", "pts_kicking", "sabotage_pts",
 ]
 SUM_COLS = [c for c in PLAYER_COLS if c.startswith(("n_", "pts_"))] + ["sabotage_pts"]
+# Stats some seasons lack (targets, 2003 to 2008): a total over any game without them is blank, not a short count.
+NULLABLE = {"n_targets"}
+
+
+def total_expr(c: str) -> pl.Expr:
+    if c in NULLABLE:
+        return pl.when(pl.col(c).null_count() > 0).then(None).otherwise(pl.col(c).sum()).alias(c)
+    return pl.col(c).sum()
+
+
+def ensure_cols(df: pl.DataFrame) -> pl.DataFrame:
+    """Files written before a column existed get it as nulls."""
+    missing = [c for c in NULLABLE if c not in df.columns]
+    df = df.with_columns([pl.lit(None, dtype=pl.Int64).alias(c) for c in missing])
+    return df.with_columns([pl.col(c).cast(pl.Int64) for c in NULLABLE])
 DEF_COLS = ["team", "opponent", "week", "opp_score", "points_allowed", "pa_bucket", "sabotage_pts"]
 
 
@@ -61,10 +76,10 @@ def season_totals(data_dir, seasons: list[int]) -> tuple[dict, dict]:
     prow, drow = [], []
     for s in seasons:
         p = json.loads((data_dir / f"scores-{s}.json").read_text())
-        df = pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None)
+        df = ensure_cols(pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None))
         agg = (df.sort("week").group_by("player_id", maintain_order=True)
                .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
-                    pl.len().alias("g"), *[pl.col(c).sum() for c in SUM_COLS])
+                    pl.len().alias("g"), *[total_expr(c) for c in SUM_COLS])
                .with_columns(pl.lit(s).alias("season")))
         prow.append(agg)
         d = json.loads((data_dir / f"defense-{s}.json").read_text())
@@ -84,7 +99,7 @@ def career_totals(player_seasons: dict, defense_seasons: dict) -> tuple[dict, di
     sums = [c for c in SUM_COLS]
     C = (P.group_by("player_id", maintain_order=True)
          .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
-              pl.len().alias("yrs"), pl.col("g").sum(), *[pl.col(c).sum() for c in sums])
+              pl.len().alias("yrs"), pl.col("g").sum(), *[total_expr(c) for c in sums])
          .sort("sabotage_pts", descending=True))
     D = pl.DataFrame(defense_seasons["rows"], schema=defense_seasons["cols"], orient="row", infer_schema_length=None)
     DC = (D.group_by("team").agg(pl.len().alias("yrs"), pl.col("g").sum(), pl.col("points_allowed").sum(),
@@ -162,7 +177,7 @@ def player_files(data_dir, seasons: list[int]) -> tuple[dict[str, dict], dict]:
     frames, ctx = [], []
     for s in seasons:
         p = json.loads((data_dir / f"scores-{s}.json").read_text())
-        frames.append(pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None).with_columns(pl.lit(s).alias("season")))
+        frames.append(ensure_cols(pl.DataFrame(p["rows"], schema=p["cols"], orient="row", infer_schema_length=None)).with_columns(pl.lit(s).alias("season")))
         gp = data_dir / f"games-{s}.json"
         if gp.exists():
             g = json.loads(gp.read_text())
@@ -181,7 +196,7 @@ def player_files(data_dir, seasons: list[int]) -> tuple[dict[str, dict], dict]:
     # season totals and position rank (QB, RB incl. FB, WR, TE, K)
     S = (P.sort(["season", "week"]).group_by(["season", "player_id"], maintain_order=True)
          .agg(pl.col("player_display_name").last(), pl.col("position").last(), pl.col("team").last(),
-              pl.len().alias("g"), *[pl.col(c).sum() for c in SUM_COLS])
+              pl.len().alias("g"), *[total_expr(c) for c in SUM_COLS])
          .with_columns(pl.when(pl.col("position") == "FB").then(pl.lit("RB")).otherwise(pl.col("position")).alias("pg"))
          .with_columns(pl.col("sabotage_pts").rank("min", descending=True).over(["season", "pg"]).cast(pl.Int64).alias("pos_rank"),
                        pl.len().over(["season", "pg"]).alias("pos_n")))

@@ -139,3 +139,12 @@ def test_position_percentiles(tmp_path):
     assert pct("A", "pct_n_fg_missed") == 0                     # nobody misses kicks: 0, not 100
     assert pct("D", "pct_n_ints") is None                       # under 4 games
     assert [r[0] for r in idx["rows"]][0] == "C"               # search index sorted by career points
+
+
+def test_target_totals_blank_if_any_game_missing():
+    import polars as pl
+    import export
+    df = pl.DataFrame({"p": ["a", "a", "b", "b"], "n_targets": [5, None, 4, 6]}, schema={"p": pl.Utf8, "n_targets": pl.Int64})
+    out = dict(df.group_by("p").agg(export.total_expr("n_targets")).iter_rows())
+    # a: one game without targets -> blank; b: 4 + 6 = 10
+    assert out["a"] is None and out["b"] == 10
