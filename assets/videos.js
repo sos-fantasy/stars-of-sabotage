@@ -9,6 +9,9 @@ let meta = null, list = [], onSite = true;
 const thumb = (id) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 const watch = (id) => `https://www.youtube.com/watch?v=${id}`;
 const key = (v) => `${v.season}-${v.week}`;
+// nflverse numbers the playoffs as weeks 19 to 22.
+const PLAYOFF = { 19: "Wild Card", 20: "Divisional round", 21: "Conference championships", 22: "Super Bowl" };
+const wkLabel = (w) => PLAYOFF[w] || `week ${w}`;
 
 async function init() {
   try {
@@ -32,7 +35,7 @@ async function init() {
   const sel = $("#v-week");
   const seasons = [...new Set(weeks.map((v) => v.season))];
   sel.innerHTML = seasons.map((s) => `<optgroup label="${s}">${weeks.filter((v) => v.season === s)
-    .map((v) => `<option value="${key(v)}">${v.season} week ${v.week}</option>`).join("")}</optgroup>`).join("");
+    .map((v) => `<option value="${key(v)}">${v.season} ${wkLabel(v.week)}</option>`).join("")}</optgroup>`).join("");
   const want = `${params.get("season")}-${params.get("week")}`;
   sel.value = weeks.some((v) => key(v) === want) ? want : key(weeks[0]);
   sel.onchange = () => show(sel.value, true);
@@ -57,7 +60,7 @@ async function init() {
     $("#v-more-h").textContent = same.length ? `More from ${season}` : "Earlier seasons";
     $("#v-more").innerHTML = [...same, ...older].map((v) =>
       `<a class="vtile" href="?season=${v.season}&week=${v.week}" data-k="${key(v)}">
-        <img src="${thumb(v.id)}" alt="" loading="lazy" width="480" height="360"><span>${v.season} week ${v.week}</span></a>`).join("");
+        <img src="${thumb(v.id)}" alt="" loading="lazy" width="480" height="360"><span>${v.season} ${wkLabel(v.week)}</span></a>`).join("");
     $("#v-more-h").hidden = weeks.length < 2;
     culprits(season, week);
   }
@@ -65,7 +68,7 @@ async function init() {
 }
 
 function card(v) {
-  const title = esc(v.title || `${v.season} week ${v.week}`);
+  const title = esc(v.title || `${v.season} ${wkLabel(v.week)}`);
   const by = v.channel ? `<p class="vby">From ${esc(v.channel)} on YouTube</p>` : "";
   if (v.embed === "no" || !onSite) {
     return `<article class="vcard"><a class="vframe off" href="${watch(v.id)}" target="_blank" rel="noopener">
