@@ -15,16 +15,16 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/styles.css?v=536cb6b112">
+<link rel="stylesheet" href="assets/styles.css?v=4c6c429de7">
 </head>
-<body class="page-method" data-dv="4135259d4b03c385">
+<body class="page-method" data-dv="ac912d51692bb659">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-head">
   <a class="brand" href="./" aria-label="Stars of Sabotage home">
     <picture><source srcset="assets/whoopsie-sm.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="" width="44" height="49"></picture>
     <span class="wordmark">Stars of <em>Sabotage</em></span>
   </a>
-  <nav aria-label="Main"><a href="./">Leaderboard</a><a href="compare.html">Compare</a><a href="defenses.html">Defenses</a><a href="video.html">Video</a><a href="super-stars.html">Super Stars</a><a href="method.html" aria-current="page">Scoring</a></nav>
+  <nav aria-label="Main"><a href="./">Leaderboard</a><a href="compare.html">Compare</a><a href="defenses.html">Defenses</a><a href="video.html">Video</a><a href="matchups.html">Matchups</a><a href="super-stars.html">Super Stars</a><a href="method.html" aria-current="page">Scoring</a></nav>
   <div class="hsearch" data-search role="search">
     <label class="sr-only" for="q-head">Search players and teams</label>
     <input id="q-head" type="search" placeholder="Search players, teams" autocomplete="off" spellcheck="false"
@@ -79,6 +79,7 @@
 <p>Fumbles count for any offensive player, on any play where his team has the ball or he is returning a kick or punt. That includes a quarterback who drops or botches a snap. A lost fumble goes to the last offensive player who lost control of the ball. Fumbles by defensive players never count.</p>
 <p>Field goal distance is the full kick distance: from the spot of the hold to the goalposts. It is the number you hear on the broadcast.</p>
 <p>Blocked field goals and blocked extra points count as misses. A blocked 23-yard try scores the same as a missed 23-yard try.</p>
+<p>Targets (passes thrown his way) are shown in the Stats view and game logs but score nothing. They show how often a team tries to get a player the ball. nflverse has no target counts for 2003 to 2008, so those seasons show a blank.</p>
 <p>Rushing attempts include quarterback kneel-downs, because official NFL statistics record them as carries. Spikes to stop the clock count as incomplete passes for the same reason.</p>
 
 <h2>Points allowed, and why it is not always the final score</h2>
@@ -102,6 +103,21 @@
 <h2>Where the data comes from</h2>
 <p>Game statistics come from <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, published under the <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> license. We do not use any fantasy platform's data.</p>
 <p>Scores update several times on game days and once each morning. The NFL issues stat corrections from Monday through Wednesday, so every week is marked provisional until 10 AM Eastern on the Thursday after its last game, then final.</p>
+
+
+<h2 id="projections">How projections work</h2>
+<p>Sabotage points are a sum of events, so we project the events and multiply by their point values. For each player we estimate incompletions, sacks, carries, catches, fumbles, lost fumbles, interceptions and pick sixes from his recent games, weighting the latest games most and pulling small samples toward the average for his position. Then we adjust for the game and his role: the betting spread and total (a team expected to trail throws more), what the opponent's defense has allowed, home or away, roof, the wind forecast, and his share of offensive snaps over his last three games. We also tested the injury report (Questionable, limited practice); it did not improve the projections once snap share was in, so it is not used.</p>
+<p>Defenses get a range of likely points allowed, centered on the opponent's expected score from the spread and total, and we average the Sabotage points across that range.</p>
+<p>Kickers get their season average. A model built on kick distance, wind and the kicker's track record did worse than the plain average in testing, because missed kicks barely repeat from one week to the next.</p>
+<p>Every projection assumes the player plays. Players listed out, doubtful, or on injured reserve are left off. The likely range runs from the 10th to the 90th percentile of what happened to players with similar projections. Betting lines are used only as game context. This site does not give betting advice.</p>
+<h3>How well it worked</h3>
+<p>We replayed every regular-season week from 2021 to 2025. Each week's projections used only games played before that week, then we compared them with what happened. Average miss is the typical gap between projection and result, in Sabotage points (lower is better). Rank match measures how well the projected order of players matched the real order, from 0 (random) to 1 (perfect).</p>
+<div class="table-wrap plain"><table><thead><tr><th>Position</th><th class="num">Average miss, ours</th><th class="num">Season average</th><th class="num">Last 4 games</th><th class="num">Rank match, ours</th><th class="num">Season average</th><th class="num">Results inside range</th></tr></thead><tbody>
+<tr><td>Quarterbacks</td><td class="num">19.23</td><td class="num">20.37</td><td class="num">21.00</td><td class="num">0.34</td><td class="num">0.26</td><td class="num">82%</td></tr><tr><td>Running backs</td><td class="num">5.27</td><td class="num">5.47</td><td class="num">5.54</td><td class="num">0.75</td><td class="num">0.72</td><td class="num">86%</td></tr><tr><td>Wide receivers</td><td class="num">3.57</td><td class="num">3.77</td><td class="num">3.82</td><td class="num">0.62</td><td class="num">0.57</td><td class="num">90%</td></tr><tr><td>Tight ends</td><td class="num">2.89</td><td class="num">3.04</td><td class="num">3.14</td><td class="num">0.61</td><td class="num">0.56</td><td class="num">90%</td></tr><tr><td>Kickers</td><td class="num">7.49</td><td class="num">7.49</td><td class="num">7.54</td><td class="num">0.04</td><td class="num">0.04</td><td class="num">93%</td></tr><tr><td>Defenses</td><td class="num">7.05</td><td class="num">8.12</td><td class="num"></td><td class="num">0.37</td><td class="num">0.10</td><td class="num"></td></tr>
+</tbody></table></div>
+<p>The spread and total in the test are the lines nflverse records for each game. Live projections use the current lines, which can move before kickoff.</p>
+<p>Each week we review the five biggest misses on the <a href="improvements.html">projection review page</a>, with what drove them and what we plan to test.</p>
+<p>Forecasts come from <a href="https://open-meteo.com/">Open-Meteo.com</a>, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
 
 <h2>Rule versions</h2>
 <p>Every score on this site records the rule version that produced it. If the league changes its rules, past seasons are rescored under a new version, and the old version stays on record.</p>

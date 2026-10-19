@@ -434,3 +434,60 @@ table.cmp tr.totrow th[scope="row"] { font-size: 15px; }
   .site-head nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
   .site-head nav a { text-align: center; padding: 7px 2px; font-size: 11px; }
 }
+
+/* matchups page */
+.mtabs { margin: 6px 0 10px; }
+.ggrid { grid-auto-flow: dense; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 14px; margin-top: 10px; }
+.gcard { background: var(--bg-2); border: 1px solid var(--line); padding: 12px 14px; }
+.gcard h3 { margin: 0 0 4px; font: 400 22px/1.1 var(--display); text-transform: uppercase; }
+.gmeta { margin: 0 0 3px; color: var(--muted); font-size: 12px; }
+.gtop { list-style: none; margin: 10px 0 6px; padding: 0; }
+.gtop li { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); }
+.gtop li .dim { grid-column: 1; font-size: 11px; }
+.gtop li b { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 400 22px/1 var(--display); color: var(--yellow); }
+.gdef { margin: 0; font-size: 12px; color: var(--muted); }
+.pproj { margin: 12px 0 0; padding: 10px 14px; background: var(--bg-2); border-left: 3px solid var(--rust); }
+.pproj .big { font: 400 30px/1 var(--display); color: var(--yellow); margin-right: 8px; }
+.pproj p { margin: 2px 0; }
+@media (max-width: 720px) {
+  .site-head nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .site-head nav a { font-size: 10px; letter-spacing: 0; padding: 7px 1px; }
+}
+/* matchups game cards: summary shows QBs and defenses, opening shows every starter */
+details.gcard > summary { list-style: none; cursor: pointer; }
+details.gcard > summary::-webkit-details-marker { display: none; }
+details.gcard:hover { border-color: var(--line-2); }
+details.gcard[open] { grid-column: 1 / -1; border-color: var(--yellow); }
+.gqb { list-style: none; margin: 10px 0 4px; padding: 0; }
+.gqb li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 8px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--line); }
+.gqb .slot, .glist .slot { color: var(--muted); font-size: 11px; letter-spacing: .08em; }
+.gqb b.qb { font: 400 20px/1 var(--display); color: var(--yellow); margin-left: 6px; }
+.gmore { margin: 6px 0 0; font-size: 12px; color: var(--yellow); }
+.gmore::after { content: " ▾"; }
+details[open] .gmore::after { content: " ▴"; }
+.gfull { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 8px 28px; margin-top: 8px; }
+.gteam { margin: 0 0 4px; font: 400 18px/1 var(--display); text-transform: uppercase; }
+.glist { list-style: none; margin: 0; padding: 0; }
+.glist li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 8px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--line); }
+.glist b { font: 400 20px/1 var(--display); color: var(--yellow); }
+
+/* projection review */
+.misses { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); gap: 14px; }
+.miss { background: var(--bg-2); border: 1px solid var(--line); border-top: 3px solid var(--rust); padding: 12px 14px; }
+.miss header p { margin: 0 0 4px; }
+.mname a { font-weight: 700; }
+.mnums b { font: 400 22px/1 var(--display); color: var(--yellow); }
+.mnums .up, .mnums .down { font: 400 22px/1 var(--display); }
+.mnums .up { color: var(--rust); }
+.mnums .down { color: var(--muted); }
+table.mini { width: 100%; font-size: 12px; margin: 8px 0; border-collapse: collapse; }
+table.mini th, table.mini td { padding: 3px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+table.mini .num { text-align: right; }
+.mfacts { font-size: 12px; color: var(--muted); margin: 6px 0; }
+ul.why { margin: 6px 0; padding-left: 18px; font-size: 13px; }
+ul.why li { margin: 3px 0; }
+.tags span { display: inline-block; font-size: 11px; letter-spacing: .06em; padding: 2px 8px; margin: 2px 4px 0 0; background: var(--bg-3); color: var(--yellow); }
+.claude { margin-top: 22px; padding: 12px 16px; background: var(--bg-2); border-left: 3px solid var(--yellow); }
+.claude p { max-width: 72ch; }
+table.wrap td, table.wrap th { white-space: normal; }
+table.wrap td:nth-child(3) { min-width: 280px; }
