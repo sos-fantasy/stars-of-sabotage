@@ -3,3 +3,4 @@ polars==2.0.0
 PyYAML==6.0.3
 pytest==9.1.1
 tzdata
+numpy>=2.0,<3

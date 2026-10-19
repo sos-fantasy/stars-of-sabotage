@@ -37,6 +37,7 @@ const CNT = [
   { key: "n_sacks", label: "Sk", title: "Sacks taken" },
   { key: "n_carries", label: "Car", title: "Rushing attempts" },
   { key: "n_receptions", label: "Rec", title: "Receptions" },
+  { key: "n_targets", label: "Tgt", title: "Targets (not scored): how often the team threw his way" },
   { key: "n_fumbles", label: "Fum", title: "Fumbles" },
   { key: "n_fumbles_lost", label: "Lost", title: "Fumbles lost" },
   { key: "n_ints", label: "INT", title: "Interceptions thrown" },
@@ -306,6 +307,8 @@ function addPlayer(a, r, order) {
   a.g += r.g ?? 1;
   a.total += r.sabotage_pts;
   for (const k of PLAYER_ONLY) a[k] += r[k] ?? 0;
+  // Targets are missing for 2003 to 2008; any game without them blanks the total.
+  if (r.n_targets === null || r.n_targets === undefined) a.tgtMissing = true;
   if (order >= a.last) { a.last = order; a.team = r.team; a.name = r.player_display_name; a.pos = r.position; }
 }
 function addDef(a, r) {
@@ -391,6 +394,7 @@ function value(r, c) {
   if (c.key === "pergame") return r.pergame;
   if (r.isDef && PLAYER_ONLY.has(c.key)) return null;
   if (!r.isDef && DEF_ONLY.has(c.key)) return null;
+  if (c.key === "n_targets" && r.tgtMissing) return null;
   const v = r[c.key];
   if (c.pg && state.view === "pg" && typeof v === "number") return r.g ? v / r.g : 0;
   return v;

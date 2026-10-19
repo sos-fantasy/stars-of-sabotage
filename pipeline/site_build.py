@@ -19,7 +19,7 @@ DESCRIPTION = ("Sabotage fantasy football stats: NFL players and defenses ranked
                "sacks, turnovers, missed kicks, and points allowed.")
 
 
-NAV = (("board", "./", "Leaderboard"), ("compare", "compare.html", "Compare"), ("defenses", "defenses.html", "Defenses"), ("video", "video.html", "Video"),
+NAV = (("board", "./", "Leaderboard"), ("compare", "compare.html", "Compare"), ("defenses", "defenses.html", "Defenses"), ("video", "video.html", "Video"), ("matchups", "matchups.html", "Matchups"),
        ("supers", "super-stars.html", "Super Stars"), ("method", "method.html", "Scoring"))
 
 HEAD_SEARCH = """<div class="hsearch" data-search role="search">
@@ -263,6 +263,44 @@ COMPARE_BODY = """
 </div>
 """
 
+MATCHUPS_BODY = """
+<section class="hero">
+  <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
+  <div>
+    <p class="eyebrow">Projections, <span id="m-week">this week</span></p>
+    <h1>The <span class="hl">Matchups</span></h1>
+    <p class="lede">Who is set up to sabotage this week, if they play. Every projection comes with a likely range, because this league runs on things going wrong. <a href="method.html#projections">How projections work</a> · <a href="improvements.html">How they did last week</a>.</p>
+  </div>
+</section>
+<section aria-labelledby="m-top-h">
+  <h2 id="m-top-h">Top projections</h2>
+  <div class="segbtns mtabs" id="m-tabs" role="group" aria-label="Position"></div>
+  <div id="m-top"><p class="loading">Loading&hellip;</p></div>
+</section>
+<section aria-labelledby="m-games-h">
+  <h2 id="m-games-h">Every game</h2>
+  <div class="ggrid" id="m-games"></div>
+</section>
+<p class="hint">Forecasts from <a href="https://open-meteo.com/">Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>). Expected scores come from the betting spread and total and are shown as game context only.</p>
+"""
+
+IMPROVE_BODY = """
+<section class="phero">
+  <div>
+    <p class="eyebrow">Projection review</p>
+    <h1>Room for Improvement</h1>
+    <p class="pmeta">Every week, our five biggest projection misses, what drove them, and what we plan to test next. <a href="method.html#projections">How projections work</a>.</p>
+  </div>
+  <div class="ctl"><label for="i-week">Week</label><select id="i-week"></select></div>
+</section>
+<div id="i-week-body"><p class="loading">Loading&hellip;</p></div>
+<section aria-labelledby="i-tally-h">
+  <h2 id="i-tally-h">What keeps causing misses</h2>
+  <p class="hint">Every reviewed week so far. Some of each miss is plain randomness. Fumbles and interceptions especially do not repeat, so projections will never be perfect. The goal is to shrink the part we can explain.</p>
+  <div id="i-tally"></div>
+</section>
+"""
+
 VIDEO_BODY = """
 <section class="hero">
   <picture class="hero-art"><source srcset="assets/whoopsie-240.webp 240w, assets/whoopsie.webp 480w" sizes="(max-width: 720px) 120px, 168px" type="image/webp"><img src="assets/whoopsie-sm.png" alt="Sketch of a wide-eyed kid in a yellow beanie, mouth open in an O" width="240" height="267" fetchpriority="low"></picture>
@@ -338,7 +376,47 @@ def method_body() -> str:
     lost = o["fumble"] + o["fumble_lost"]
     six = o["interception_thrown"] + o["pick_six_thrown"]
     return METHOD_BODY.format(version=escape(cfg["version"]), offense=offense, kicker=kicker,
-                              defense=defense, lost=lost, six=six)
+                              defense=defense, lost=lost, six=six, projections=projections_section())
+
+
+POS_NAMES = {"QB": "Quarterbacks", "RB": "Running backs", "WR": "Wide receivers", "TE": "Tight ends",
+             "K": "Kickers", "DEF": "Defenses"}
+
+
+def projections_section() -> str:
+    """How projections work, with the backtest table from config/backtest.json."""
+    import json
+    p = ROOT / "config" / "backtest.json"
+    if not p.exists():
+        return ""
+    bt = json.loads(p.read_text())
+    rows = []
+    for grp in ("players", "defenses"):
+        for pos in ("QB", "RB", "WR", "TE", "K", "DEF"):
+            v = bt[grp].get(pos)
+            if not v:
+                continue
+            m, b, l4 = v["proj"], v["b_std"], v.get("b_last4")
+            rng = f'{round(v["range_hit"] * 100)}%' if "range_hit" in v else ""
+            rows.append(f"<tr><td>{POS_NAMES[pos]}</td><td class=\"num\">{m['mae']:.2f}</td><td class=\"num\">{b['mae']:.2f}</td>"
+                        f"<td class=\"num\">{'' if not l4 else format(l4['mae'], '.2f')}</td>"
+                        f"<td class=\"num\">{m['spearman']:.2f}</td><td class=\"num\">{b['spearman']:.2f}</td><td class=\"num\">{rng}</td></tr>")
+    s = bt["seasons"]
+    return f"""
+<h2 id="projections">How projections work</h2>
+<p>Sabotage points are a sum of events, so we project the events and multiply by their point values. For each player we estimate incompletions, sacks, carries, catches, fumbles, lost fumbles, interceptions and pick sixes from his recent games, weighting the latest games most and pulling small samples toward the average for his position. Then we adjust for the game and his role: the betting spread and total (a team expected to trail throws more), what the opponent's defense has allowed, home or away, roof, the wind forecast, and his share of offensive snaps over his last three games. We also tested the injury report (Questionable, limited practice); it did not improve the projections once snap share was in, so it is not used.</p>
+<p>Defenses get a range of likely points allowed, centered on the opponent's expected score from the spread and total, and we average the Sabotage points across that range.</p>
+<p>Kickers get their season average. A model built on kick distance, wind and the kicker's track record did worse than the plain average in testing, because missed kicks barely repeat from one week to the next.</p>
+<p>Every projection assumes the player plays. Players listed out, doubtful, or on injured reserve are left off. The likely range runs from the 10th to the 90th percentile of what happened to players with similar projections. Betting lines are used only as game context. This site does not give betting advice.</p>
+<h3>How well it worked</h3>
+<p>We replayed every regular-season week from {s[0]} to {s[-1]}. Each week's projections used only games played before that week, then we compared them with what happened. Average miss is the typical gap between projection and result, in Sabotage points (lower is better). Rank match measures how well the projected order of players matched the real order, from 0 (random) to 1 (perfect).</p>
+<div class="table-wrap plain"><table><thead><tr><th>Position</th><th class="num">Average miss, ours</th><th class="num">Season average</th><th class="num">Last 4 games</th><th class="num">Rank match, ours</th><th class="num">Season average</th><th class="num">Results inside range</th></tr></thead><tbody>
+{"".join(rows)}
+</tbody></table></div>
+<p>The spread and total in the test are the lines nflverse records for each game. Live projections use the current lines, which can move before kickoff.</p>
+<p>Each week we review the five biggest misses on the <a href="improvements.html">projection review page</a>, with what drove them and what we plan to test.</p>
+<p>Forecasts come from <a href="https://open-meteo.com/">Open-Meteo.com</a>, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
+"""
 
 
 METHOD_BODY = """
@@ -369,6 +447,7 @@ METHOD_BODY = """
 <p>Fumbles count for any offensive player, on any play where his team has the ball or he is returning a kick or punt. That includes a quarterback who drops or botches a snap. A lost fumble goes to the last offensive player who lost control of the ball. Fumbles by defensive players never count.</p>
 <p>Field goal distance is the full kick distance: from the spot of the hold to the goalposts. It is the number you hear on the broadcast.</p>
 <p>Blocked field goals and blocked extra points count as misses. A blocked 23-yard try scores the same as a missed 23-yard try.</p>
+<p>Targets (passes thrown his way) are shown in the Stats view and game logs but score nothing. They show how often a team tries to get a player the ball. nflverse has no target counts for 2003 to 2008, so those seasons show a blank.</p>
 <p>Rushing attempts include quarterback kneel-downs, because official NFL statistics record them as carries. Spikes to stop the clock count as incomplete passes for the same reason.</p>
 
 <h2>Points allowed, and why it is not always the final score</h2>
@@ -393,6 +472,7 @@ METHOD_BODY = """
 <p>Game statistics come from <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, published under the <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> license. We do not use any fantasy platform's data.</p>
 <p>Scores update several times on game days and once each morning. The NFL issues stat corrections from Monday through Wednesday, so every week is marked provisional until 10 AM Eastern on the Thursday after its last game, then final.</p>
 
+{projections}
 <h2>Rule versions</h2>
 <p>Every score on this site records the rule version that produced it. If the league changes its rules, past seasons are rescored under a new version, and the old version stays on record.</p>
 <p>The archive goes back to 1999, the first season nflverse has play-by-play for. Every past season is scored under the current rules, including Yahoo's points-allowed rule, so a 2005 score means what it would mean today. Seasons before 2021 had 16 games, so compare per-game numbers across eras.</p>
@@ -518,7 +598,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     a = out / "assets"
     v = {"css": _hash(a / "styles.css")}
     # In dependency order: each module's imports are already hashed when it is rewritten.
-    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare", "videos"):
+    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare", "videos", "matchups", "improvements"):
         src = (a / f"{mod}.js").read_text()
         for dep in [d for d in v if d != "css"]:
             src = src.replace(f'from "./{dep}.js"', f'from "./{dep}.js?v={v[dep]}"')
@@ -527,7 +607,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
 
     def tag(html: str) -> str:
         html = html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
-        for mod in ("foot", "common", "app", "player", "defenses", "compare", "videos"):
+        for mod in ("foot", "common", "app", "player", "defenses", "compare", "videos", "matchups", "improvements"):
             html = html.replace(f'src="assets/{mod}.js"', f'src="assets/{mod}.js?v={v[mod]}"')
         return html
     import json
@@ -558,6 +638,8 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     (out / "player.html").write_text(page("Player | Stars of Sabotage", PLAYER_BODY, "player", "player"))
     (out / "defenses.html").write_text(page("Defenses | Stars of Sabotage", DEFENSES_BODY, "defenses", "defenses"))
     (out / "compare.html").write_text(page("Compare players | Stars of Sabotage", COMPARE_BODY, "compare", "compare"))
+    (out / "matchups.html").write_text(page("Matchups and projections | Stars of Sabotage", MATCHUPS_BODY, "matchups", "matchups"))
+    (out / "improvements.html").write_text(page("Projection review | Stars of Sabotage", IMPROVE_BODY, "matchups", "improvements"))
     (out / "video.html").write_text(page("Reel Good Sabotage | Stars of Sabotage", VIDEO_BODY, "video", "videos"))
 
 

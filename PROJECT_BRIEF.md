@@ -507,3 +507,61 @@ First run, October 18: weeks 1 to 5 found, all embeddable, all from NFL Rush.
 The page shows a thumbnail and loads the youtube-nocookie.com player only on press, a "watch on YouTube" card if embedding is off, the week's top five Sabotage scorers, and earlier weeks.
 
 Phase 3 exit criteria: a manual add takes one line (met). "The latest video appears for its week without manual work" gets its first real test when the Week 6 video is posted.
+
+## 28. Projections and Matchups (Phase 4, October 19, 2026)
+
+Built on the `phase4` branch: `pipeline/project.py` (history, baselines, count model, game context, Poisson and logistic fits), `pipeline/projections.py` (the weekly build), `pipeline/weather.py` with `config/stadiums.csv`, `pipeline/backtest.py`, `matchups.html`, a projection box on player pages, and a "How projections work" section on the method page.
+
+Walk-forward backtest of the production code, 2021 to 2025 regular seasons (`config/backtest.json`):
+
+| Position | Avg miss, model | Season avg | Last 4 | Rank match, model | Season avg | Inside 10-90 range |
+|---|---|---|---|---|---|---|
+| QB | 19.54 | 20.37 | 21.00 | 0.31 | 0.26 | 82% |
+| RB | 5.38 | 5.47 | 5.54 | 0.75 | 0.72 | 87% |
+| WR | 3.60 | 3.77 | 3.82 | 0.61 | 0.58 | 90% |
+| TE | 2.94 | 3.04 | 3.14 | 0.59 | 0.56 | 90% |
+| K | 7.49 | 7.49 | 7.54 | 0.04 | 0.04 | 93% |
+| DEF | 7.05 | 8.12 | | 0.37 | 0.10 | |
+
+Kickers ship the season-to-date baseline, labeled: a distance, wind and kicker-skill model scored 8.05 average miss against the baseline's 7.50 and ran high (7.1 projected vs 5.7 actual per game).
+
+Players: each team's starters from its latest nflverse depth chart (QB1, RB1-2, WR1-3, TE1-2, K; owner, October 19), skipping anyone listed Out, Doubtful or IR and moving the next man up. If depth charts are unavailable, players with a game in the team's last three games, one QB per team. Game cards on the Matchups page show each QB and defense and open to every starter. The preview moves to the next week once the current week is down to its last two games.
+
+Weather: Open-Meteo free tier, non-commercial, under 10,000 calls a day, CC BY 4.0 (terms checked October 19, 2026 at open-meteo.com/en/terms). Stadium coordinates are checked against Open-Meteo's geocoder on the first run after the table changes (`data/stadium_check.json`). International venues carry a roof override, since nflverse lists some open-air stadiums as domes.
+
+## 29. Projection review page (owner, October 19, 2026)
+
+`improvements.html` ("Room for Improvement"), public, linked from the method and Matchups pages. Code: `pipeline/review.py`, run every pipeline pass.
+
+- Projection log: each player's and defense's last projection before kickoff is kept in `data/projection-log/{season}-wNN.json`. Weeks before the log existed (2026 weeks 1 to 5) are replayed from games played before each week and labeled "replayed"; replays cover everyone who played, including backups.
+- When a week's games are all done (provisional) and again when it turns final, the review ranks the five biggest misses in raw points and, for each: event-by-event breakdown, the chance randomness alone produces a miss that size (Poisson draws around the projection, lost fumbles drawn from fumbles and pick sixes from interceptions) and how many such misses chance alone predicts across the week, and measured causes: snap share vs the previous three games, attempts, carries and targets vs the previous four, incompletion rate, sacks vs projection, final margin vs the spread, forecast vs recorded wind, injury report status.
+- Each cause is tagged and tallied across weeks with a proposed data addition and how to test it. Status per proposal lives in `config/improvement_status.yml` (proposed, testing, adopted, rejected). No change reaches the live model without beating the backtest.
+- Claude write-up: the owner chose rules plus Claude. With the `ANTHROPIC_API_KEY` repository secret set, the pipeline sends each week's measured facts and the tally to the Messages API (`claude-sonnet-5-5`, at most 1,400 output tokens, once per week and again if the facts change) and shows the text labeled as written by Claude. Without the key the page shows the rule-based analysis only. Price checked October 19, 2026: $2 input and $10 output per million tokens, so a weekly review costs a few cents.
+- Projections cannot reach 100%. Fumbles, interceptions and pick sixes are close to random; the page says so and tracks the part with a measured cause.
+
+## 30. Snap share, injury report, depth chart (owner request, October 19, 2026)
+
+Owner asked to add snap share, final score vs the spread, pass attempts vs incompletion rate, forecast vs actual wind, the injury report, and depth chart changes.
+
+All six appear on the projection review page as measured causes of each miss (depth chart change added: a player's slot this week vs last week's live log).
+
+Only facts known before kickoff can feed projections. Final score vs the spread and actual wind happen during the game, so they explain misses but cannot predict them; the model already uses the spread and the forecast. Backtested as projection features, 2021-2025:
+
+| Version | QB miss / rank | RB | WR | TE |
+|---|---|---|---|---|
+| Before | 19.54 / 0.31 | 5.38 / 0.75 | 3.60 / 0.61 | 2.94 / 0.59 |
+| + snap share, last 3 games (adopted) | 19.23 / 0.34 | 5.27 / 0.75 | 3.57 / 0.62 | 2.89 / 0.61 |
+| + Questionable, limited or missed practice | no further gain (not adopted) | | | |
+
+Pass attempts are not projected separately yet; "project opportunities directly" stays on the review page as a proposal.
+
+News: owner suggested Ian Rapoport, Adam Schefter and NFL official accounts on X, followed from the Stars of Sabotage account. Open question; see the chat of October 19.
+
+## 31. Targets (owner, October 19, 2026)
+
+Targets are shown, not scored: a "Tgt" column in the leaderboard's Stats view (totals and per game) and in player game logs. Source: nflverse player stats `targets`, carried as `n_targets` in every score file. nflverse has no target counts for 2003 to 2008 (league-wide targets below catches; checked October 19, 2026), and play-by-play cannot rebuild them because incompletions in those seasons have no receiver. Those seasons store null and show a blank; any season or career total that includes such a game is blank rather than short. Derived-from-play-by-play targets matched nflverse exactly for 2010, as a check. Sabotage points are unchanged (2026 and 2005 rescored with identical points). Needs one full backfill run after the merge so every season file gets the column.
+
+## 32. Wreckage Report lines by week (owner, October 19, 2026)
+
+Each award (saboteur of the week with a QB or non-QB version, pick six, butterfingers, kicker, defense) has 18 lines in `pipeline/stories.py`, one per regular-season week: week 1 uses line 1, week 18 line 18, playoff weeks wrap to line 1. No model call is needed; names and stats fill in from the scored data. Tests check 18 distinct lines per award, every placeholder fills, and house style (no em dashes, banned words).
+Owner edits (Word file, October 19, 2026) applied exactly: six QB lines changed or reordered (weeks 2, 4, 6, 7, 15, 17); week 6 is the Halloween line. A quarterback with two or more pick sixes in a game gets its own 18-line list ("Pick sixes"), with the count, the count as a word, the per-throw value (31) and the total; one pick six keeps the original list. Hand check: two pick sixes = 2 x 31 = 62 points.
