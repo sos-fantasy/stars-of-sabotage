@@ -16,12 +16,12 @@ from __future__ import annotations
 TEMPLATES = {
     "top": [
         "{name} played quarterback like a man returning a rental car he never planned to see again. {line}. {pts} points.",
-        "{name} treated the pocket like a hot stove and every pass like a rumor he could not confirm. {line}. {pts} points.",
-        "Somewhere {a_opp} defensive coordinator is framing the tape. {name} supplied the material. {line}. {pts} points.",
-        "{name} ran the offense the way a raccoon runs a campsite: busy, loud, and leaving a mess for someone else. {line}. {pts} points.",
-        "{name} took the snap, surveyed the field, and chose chaos. {line}. {pts} points.",
         "If the offense had a group chat, {name} is the reason it went quiet. {line}. {pts} points.",
-        "{name} called his own number for disaster and delivered on every promise. {line}. {pts} points.",
+        "Somewhere {a_opp} defensive coordinator is framing the tape. {name} supplied the material. {line}. {pts} points.",
+        "{name} ran the offense the way a raccoon runs a campsite: leaving a mess for someone else. {line}. {pts} points.",
+        "{name} took the snap, surveyed the field, and chose chaos. {line}. {pts} points.",
+        "It must be getting close to Halloween because {name} kept seeing ghosts. {line}. {pts} points.",
+        "{name} performed like a comedian who forgot his punchlines. {line}. {pts} points.",
         "The playbook said one thing. {name} had other plans. {line}. {pts} points.",
         "{name} turned a routine game into a group project nobody wanted to finish. {line}. {pts} points.",
         "Coaches spend all week installing a game plan. {name} uninstalled it. {line}. {pts} points.",
@@ -29,9 +29,9 @@ TEMPLATES = {
         "Film study this week will be short and painful, and {name} is the whole syllabus. {line}. {pts} points.",
         "{name} kept both offenses guessing, mostly his own. {line}. {pts} points.",
         "Somebody check the headset. {name} heard every call backwards. {line}. {pts} points.",
-        "{name} put on a clinic in the art of going nowhere fast. {line}. {pts} points.",
+        "{name} gave a presentation on the art of going nowhere fast. {line}. {pts} points.",
         "{name} earned a starring role in next week's blooper reel. {line}. {pts} points.",
-        "{name} plays quarterback the way a toddler plays Jenga: total commitment, predictable results. {line}. {pts} points.",
+        "{name} plays quarterback the way a toddler plays Jenga. {line}. {pts} points.",
         "{name} found every way to stall a drive and invented a few more. {line}. {pts} points.",
     ],
     "top_nonqb": [
@@ -73,6 +73,26 @@ TEMPLATES = {
         "{name} played catch with the wrong jerseys. Pick six, {p6pts} points.",
         "Six points for the {opp}, {p6pts} for the ledger, and one long walk to the sideline for {name}.",
         "{name} threw a pick six, which in this league is a grand slam. {p6pts} points.",
+    ],
+    "pick_six_multi": [
+        "{name} threw {n6} pick sixes to the {opp}. One is a mistake. {n6w} is a habit. {p6pts} points.",
+        "The {opp} defense scored {n6} touchdowns on passes from {name}. {p6pts} points.",
+        "{name} returned to the scene of the crime {n6} times. Pick sixes, {p6pts} points.",
+        "Fool me once, shame on you. {name} threw {n6} pick sixes to the {opp} anyway. {p6pts} points.",
+        "{name} offered the {opp} a volume discount on pick sixes. {n6} of them, {p6pts} points.",
+        "The {opp} defense would like to name {name} an honorary member. {n6} pick sixes, {p6pts} points.",
+        "{name} found the {opp} so open he went back for more. {n6} pick sixes, {p6pts} points.",
+        "{name} threw {n6} passes that ended in the wrong end zone. {p6pts} points, a small fortune in this league.",
+        "Lightning struck more than once, and {name} kept holding the umbrella. {n6} pick sixes, {p6pts} points.",
+        "The {opp} defense scored like an offense this week, with plenty of help from {name}. {n6} pick sixes, {p6pts} points.",
+        "{name} made the {opp} defense a scoring threat. {n6} pick sixes, {p6pts} points.",
+        "{n6w} pick sixes from {name}. Somewhere {a_opp} defensive coordinator is asking for a raise. {p6pts} points.",
+        "One pick six is a bad day. {name} threw {n6}. {p6pts} points.",
+        "{name} kept serving the {opp} defense like it was a holiday dinner. {n6} pick sixes, {p6pts} points.",
+        "The {opp} took passes from {name} the distance {n6} times. {p6pts} points.",
+        "{name} turned the {opp} defense into his favorite receivers, {n6} times over. {p6pts} points.",
+        "Every pick six is worth {p6one} points here. {name} threw {n6} of them. {p6pts} points.",
+        "{name} threw {n6} pick sixes, the Sabotage version of a perfect game. {p6pts} points.",
     ],
     "fumbles": [
         "{name} handled the football like a bar of soap in a hot shower. {fum} fumbles, {lost} lost, {fpts} points from fumbles alone.",
@@ -158,6 +178,9 @@ def nick(abbr: str, season: int | None = None) -> str:
     return NICK.get(abbr, abbr)
 
 
+NUM_WORD = {2: "Two", 3: "Three", 4: "Four", 5: "Five"}
+
+
 def a_an(word: str) -> str:
     return ("an " if word[:1].upper() in "AEIOU" else "a ") + word
 
@@ -166,6 +189,7 @@ LABELS = {
     "top": "Saboteur of the week",
     "top_nonqb": "Best non-QB saboteur",
     "pick_six": "Pick six",
+    "pick_six_multi": "Pick sixes",
     "fumbles": "Butterfingers award",
     "kicker": "Kicker of the week",
     "defense": "Defense of the week",
@@ -245,8 +269,15 @@ def build(week: int, players: list[dict], defenses: list[dict], season: int) -> 
     p6 = sorted([r for r in players if r["n_pick_sixes"] > 0], key=lambda r: (-r["n_pick_sixes"], -r["sabotage_pts"]))
     if p6:
         r = p6[0]
-        out.append(_story("pick_six", r, key(r), name=r["player_display_name"], opp=nick(r["opponent_team"]),
-                          a_opp=a_an(nick(r["opponent_team"])), p6pts=r["p6_value"]))
+        n6 = int(r["n_pick_sixes"])
+        if n6 >= 2:
+            # Its own list: one throw lines read wrong for a quarterback who threw several.
+            out.append(_story("pick_six_multi", r, key(r), name=r["player_display_name"], opp=nick(r["opponent_team"]),
+                              a_opp=a_an(nick(r["opponent_team"])), n6=n6, n6w=NUM_WORD.get(n6, str(n6)),
+                              p6one=r["p6_value"], p6pts=n6 * r["p6_value"]))
+        else:
+            out.append(_story("pick_six", r, key(r), name=r["player_display_name"], opp=nick(r["opponent_team"]),
+                              a_opp=a_an(nick(r["opponent_team"])), p6pts=r["p6_value"]))
     if fum:
         r = fum[0]
         out.append(_story("fumbles", r, key(r), name=r["player_display_name"], fum=r["n_fumbles"],

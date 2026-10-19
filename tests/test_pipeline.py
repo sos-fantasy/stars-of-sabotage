@@ -46,7 +46,7 @@ def test_is_due():
 
 FIELDS = {"name": "A. Player", "opp": "Broncos", "a_opp": "a Broncos", "line": "3 sacks", "pts": 40,
           "p6pts": 31, "fum": 2, "lost": 1, "fpts": 24, "kline": "Missed from 47", "team": "Eagles",
-          "a_team": "an Eagles", "pa": 30}
+          "a_team": "an Eagles", "pa": 30, "n6": 2, "n6w": "Two", "p6one": 31}
 
 
 @pytest.mark.parametrize("kind", list(stories.TEMPLATES))
@@ -163,3 +163,18 @@ def test_line_follows_week_number():
     w19 = stories.build(19, players, [], 2026)[0]["text"]
     assert w1 != w2 and w19 == w1          # week 19 (playoffs) wraps to line 1
     assert w1.startswith("QB1 played quarterback like a man returning a rental car")
+
+
+def test_multiple_pick_sixes_use_their_own_list():
+    # Two pick sixes at 31 each (10 for the interception + 21 bonus) = 62 points.
+    players = [_p("QB1", "QB", 120, n_incomplete=10, n_ints=2, n_pick_sixes=2)]
+    s = [x for x in stories.build(1, players, [], 2026) if x["kind"].startswith("pick_six")][0]
+    assert s["kind"] == "pick_six_multi" and s["label"] == "Pick sixes"
+    assert s["text"] == "QB1 threw 2 pick sixes to the Eagles. One is a mistake. Two is a habit. 62 points."
+    one = [x for x in stories.build(1, [_p("QB2", "QB", 80, n_ints=1, n_pick_sixes=1)], [], 2026) if x["kind"].startswith("pick_six")][0]
+    assert one["kind"] == "pick_six" and "31 points" in one["text"]
+
+
+def test_owner_edits_applied():
+    assert stories.TEMPLATES["top"][5].startswith("It must be getting close to Halloween")
+    assert stories.TEMPLATES["top"][16] == "{name} plays quarterback the way a toddler plays Jenga. {line}. {pts} points."
