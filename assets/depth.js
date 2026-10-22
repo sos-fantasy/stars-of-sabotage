@@ -1,5 +1,6 @@
 import { $, esc, NICK, CITY } from "./common.js?v=dd86e435db";
 import { loadMeta, fillFooter, fmtET } from "./foot.js?v=949d944f7b";
+import { lineChart, wireTips, fmt } from "./stats.js?v=b43e399a02";
 import { loadInjuries, loadDepth, tagHTML, isOut } from "./avail.js?v=7a394d9948";
 
 // Every team's depth chart at QB, RB, WR, TE and K, with today's injury designations.
@@ -7,6 +8,8 @@ import { loadInjuries, loadDepth, tagHTML, isOut } from "./avail.js?v=7a394d9948
 // the same way the Matchups page picks who to project.
 const POS = ["QB", "RB", "WR", "TE", "K"];
 const params = new URLSearchParams(location.search);
+// Teams in order of team name (Bears, Bengals, Bills...), owner's choice October 22.
+const byName = (a, b) => (NICK[a] || a).localeCompare(NICK[b] || b);
 let D = null, games = new Map();
 
 async function init() {
@@ -25,10 +28,10 @@ async function init() {
     }
   }
   $("#d-week").textContent = `${D.season} week ${D.week}`;
-  const teams = Object.keys(D.teams).sort((a, b) => (CITY[a] + NICK[a]).localeCompare(CITY[b] + NICK[b]));
+  const teams = Object.keys(D.teams).sort(byName);
   const sel = $("#d-team");
   sel.innerHTML = `<option value="all">All teams, starters</option>` +
-    teams.map((t) => `<option value="${t}">${esc(CITY[t] || t)} ${esc(NICK[t] || "")}</option>`).join("");
+    teams.map((t) => `<option value="${t}">${esc(NICK[t] || t)} (${esc(CITY[t] || t)})</option>`).join("");
   const want = (params.get("team") || "").toUpperCase();
   sel.value = D.teams[want] ? want : "all";
   sel.onchange = () => { history.replaceState(null, "", sel.value === "all" ? location.pathname : `?team=${sel.value}`); show(); };
@@ -46,6 +49,7 @@ async function init() {
 function show() {
   const t = $("#d-team").value;
   $("#d-body").innerHTML = t === "all" ? allTeams() : oneTeam(t);
+  document.querySelectorAll("#d-body .chart-box").forEach(wireTips);
   $("#d-changes").innerHTML = changes(t === "all" ? null : t);
 }
 
@@ -59,11 +63,24 @@ function move(e) {
   return `<span class="dmove ${up ? "up" : "down"}" title="Was No. ${e.prev_rank} a week ago">${up ? "▲" : "▼"} from ${e.prev_rank}</span>`;
 }
 
-function entry(e) {
+function entry(e, pos) {
   const cls = ["dent", e.start ? "on" : "", unavailable(e) ? "gone" : ""].join(" ").trim();
   return `<li class="${cls}"><span class="drank">${e.rank}</span>
     <span class="dname"><span class="dn">${nameLink(e)}</span>${e.start ? ` <span class="dslot">${esc(e.slot)}</span>` : ""}${move(e)}
-      ${e.in_for ? `<span class="infor">in for ${esc(e.in_for)}</span>` : ""}${tagHTML(e.tag, { block: true })}</span></li>`;
+      ${e.in_for ? `<span class="infor">in for ${esc(e.in_for)}</span>` : ""}${tagHTML(e.tag, { block: true })}${lastLine(e, pos)}</span></li>`;
+}
+
+// His most recent game: snap share, carries (RB), targets (RB, WR, TE), Sabotage points.
+function lastLine(e, pos) {
+  const g = e.last;
+  if (!g) return `<span class="dlast">No games this season</span>`;
+  const bits = [];
+  if (pos !== "K" && g.snap !== null && g.snap !== undefined) bits.push(`${g.snap}% snaps`);
+  if (pos === "RB") bits.push(`${g.car} car`);
+  if (["RB", "WR", "TE"].includes(pos) && g.tgt !== null && g.tgt !== undefined) bits.push(`${g.tgt} tgt`);
+  bits.push(`${g.pts} pts`);
+  const where = g.team && g.team !== e.team ? ` with ${esc(g.team)}` : "";
+  return `<span class="dlast" title="Most recent game: week ${g.week}${where}">Wk ${g.week}${where}: ${bits.join(" · ")}</span>`;
 }
 
 function nextGame(team) {
@@ -81,21 +98,56 @@ function updated(t) {
 function oneTeam(t) {
   const T = D.teams[t];
   const cols = POS.filter((p) => T[p] && T[p].length).map((p) => `<section class="dcol" aria-label="${p}">
-      <h3>${p === "K" ? "Kicker" : p}</h3><ol class="dlist">${T[p].map(entry).join("")}</ol></section>`).join("");
+      <h3>${p === "K" ? "Kicker" : p}</h3><ol class="dlist">${T[p].map((e) => entry({ ...e, team: t }, p)).join("")}</ol></section>`).join("");
   return `<div class="dhead"><h2>${esc(CITY[t] || "")} ${esc(NICK[t] || t)}</h2>${nextGame(t)}<p class="hint">${updated(t)}</p></div>
-    <div class="dgrid">${cols}</div>`;
+    <div class="dgrid">${cols}</div>
+    ${usageCharts(t)}`;
+}
+
+// Usage by week for the team's players at each position, so a rising or falling role
+// shows at a glance. Up to four players per chart (the validated color slots), picked
+// by season usage and colored in depth chart order.
+const USAGE = [
+  { pos: "QB", label: "Quarterbacks: share of offensive snaps", unit: "% of snaps", i: 3, ymax: 100 },
+  { pos: "RB", label: "Running backs: rushing attempts", unit: " carries", i: 1 },
+  { pos: "WR", label: "Wide receivers: targets", unit: " targets", i: 2 },
+  { pos: "TE", label: "Tight ends: targets", unit: " targets", i: 2 },
+];
+const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];
+function usageCharts(t) {
+  const T = D.teams[t], U = T.usage || {};
+  const weeks = D.weeks || [];
+  if (!weeks.length) return "";
+  const xs = Array.from({ length: Math.max(...weeks) }, (_, i) => i + 1);
+  const charts = USAGE.map((u) => {
+    const ps = (T[u.pos] || []).filter((e) => U[e.id] && U[e.id].some((g) => g[u.i] !== null && g[u.i] !== undefined));
+    const total = (e) => U[e.id].reduce((a, g) => a + (g[u.i] || 0), 0);
+    const top = [...ps].sort((a, b) => total(b) - total(a)).slice(0, 4).sort((a, b) => a.rank - b.rank);
+    if (!top.length) return "";
+    const series = top.map((e, k) => ({
+      name: e.name, color: COLORS[k],
+      pts: U[e.id].filter((g) => g[u.i] !== null && g[u.i] !== undefined).map((g) => ({ x: g[0], v: g[u.i] })),
+    }));
+    const left = ps.length - top.length;
+    return `<section class="dchart"><h3>${esc(u.label)}</h3>
+      <div class="chart-box">${lineChart(xs, (x, long) => (long ? `Week ${x}` : String(x)), series, `${NICK[t] || t} ${u.label} by week`, { unit: u.unit, ymax: u.ymax, ymin: 4 })}</div>
+      ${left > 0 ? `<p class="hint">${left} more ${left === 1 ? "player" : "players"} with fewer ${u.pos === "QB" ? "snaps" : u.unit.trim()} not shown.</p>` : ""}</section>`;
+  }).join("");
+  return `<section class="dusage" aria-labelledby="d-usage-h"><h2 id="d-usage-h">Usage by week</h2>
+    <p class="hint">Games with the ${esc(NICK[t] || t)} only. A gap means no game that week (bye, injury, inactive, or not on the team yet). Snap share is the share of the team's offensive plays he was on the field for, from nflverse snap counts. Route participation would be a sharper measure for receivers, but it is not published during the season.</p>
+    <div class="dcharts">${charts}</div></section>`;
 }
 
 function allTeams() {
-  const order = Object.keys(D.teams).sort((a, b) => (CITY[a] + NICK[a]).localeCompare(CITY[b] + NICK[b]));
+  const order = Object.keys(D.teams).sort(byName);
   return `<div class="ggrid dall">${order.map((t) => {
     const T = D.teams[t];
-    const starters = POS.flatMap((p) => (T[p] || []).filter((e) => e.start));
+    const starters = POS.flatMap((p) => (T[p] || []).filter((e) => e.start).map((e) => ({ ...e, team: t, pos: p })));
     const out = POS.flatMap((p) => (T[p] || []).filter((e) => e.rank <= ({ QB: 1, RB: 2, WR: 3, TE: 2, K: 1 })[p] && unavailable(e)));
     const n = games.get(t);
     return `<article class="gcard dcard"><h3><a href="?team=${t}" data-team="${t}">${esc(NICK[t] || t)}</a>
         <span class="dim">${n ? `${n.home ? "vs" : "at"} ${esc(n.opp)}` : "bye"}</span></h3>
-      <ol class="glist">${starters.map((e) => `<li><span class="slot">${esc(e.slot)}</span><span>${nameLink(e)}${e.in_for ? ` <span class="infor">in for ${esc(e.in_for)}</span>` : ""}${tagHTML(e.tag, { block: true })}</span></li>`).join("")}</ol>
+      <ol class="glist">${starters.map((e) => `<li><span class="slot">${esc(e.slot)}</span><span>${nameLink(e)}${e.in_for ? ` <span class="infor">in for ${esc(e.in_for)}</span>` : ""}${tagHTML(e.tag, { block: true })}${lastLine(e, e.pos)}</span></li>`).join("")}</ol>
       ${out.length ? `<p class="dout">Not playing: ${out.map((e) => `${esc(e.name)} (${esc(e.tag.status)})`).join(", ")}</p>` : ""}
     </article>`;
   }).join("")}</div>`;
@@ -116,9 +168,9 @@ function changes(team) {
     }
   }
   if (!rows.length) return `<p class="hint">No changes among the starters in the last week.</p>`;
-  rows.sort((a, b) => a.t.localeCompare(b.t) || POS.indexOf(a.p) - POS.indexOf(b.p) || a.e.rank - b.e.rank);
+  rows.sort((a, b) => byName(a.t, b.t) || POS.indexOf(a.p) - POS.indexOf(b.p) || a.e.rank - b.e.rank);
   return `<div class="table-wrap plain"><table class="wrap"><tr><th>Team</th><th>Pos</th><th>Player</th><th>Change</th></tr>
-    ${rows.map(({ t, p, e }) => `<tr><td>${esc(t)}</td><td>${p}</td><td>${nameLink(e)}${tagHTML(e.tag, { block: true })}</td>
+    ${rows.map(({ t, p, e }) => `<tr><td>${esc(NICK[t] || t)}</td><td>${p}</td><td>${nameLink(e)}${tagHTML(e.tag, { block: true })}</td>
       <td>${[e.in_for ? `Starting in for ${esc(e.in_for)}` : "", e.new ? `New to the chart, now No. ${e.rank}` : "",
         e.prev_rank && e.prev_rank !== e.rank ? `No. ${e.prev_rank} to No. ${e.rank}` : ""].filter(Boolean).join(". ")}</td></tr>`).join("")}</table></div>`;
 }
