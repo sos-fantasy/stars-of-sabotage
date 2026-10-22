@@ -11,6 +11,7 @@ const posGroup = (p) => (p === "FB" ? "RB" : p);
 const RANK = { key: "rank", label: "#", cls: "rank sticky", sortable: false };
 const NAME = { key: "name", label: "Player", cls: "player sticky", text: true };
 const SEASON_COL = { key: "season", label: "Year", num: true, cls: "grp-start", title: "Season" };
+const TGT_COL = { key: "n_targets", label: "Tgt", num: true, pg: true, cls: "dimcol", title: "Targets (not scored): how often the team threw his way" };
 const YRS_COL = { key: "yrs", label: "Yrs", num: true, title: "Seasons with a stat line" };
 const TOTALS = [
   { key: "total", label: "Total", num: true, group: "Sabotage pts", cls: "total grp-start" },
@@ -393,6 +394,9 @@ function colDefs() {
   if (isAll() && state.rows === "season") lead.push(SEASON_COL);
   const info = [...INFO];
   if (isAll() && state.rows === "career") info.push(YRS_COL);
+  // Targets earn no points but show who the offense is feeding, so the Points view
+  // carries them too for pass catchers (the Stats view always has them).
+  if (state.cols === "pts" && ["ALL", "RB", "WR", "TE"].includes(state.pos)) info.push(TGT_COL);
   return [...lead, ...info, ...(state.cols === "pts" ? PTS : CNT)];
 }
 function value(r, c) {

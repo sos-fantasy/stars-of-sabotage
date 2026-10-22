@@ -1,3 +1,4 @@
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // Shared stat definitions and chart helpers for the player and compare pages.
 
 // Scored stats shown per position, in display order. Each: count field, points field, label.
@@ -72,5 +73,49 @@ export function wireTips(box) {
     h.addEventListener("pointerleave", (e) => e.pointerType === "mouse" && hide());
     h.addEventListener("click", () => { box.querySelectorAll(".hit.on").forEach((x) => x !== h && x.classList.remove("on")); show(); });
   });
+}
+
+
+// ---------- line chart (compare page, depth chart usage) ----------
+const W = 760, H = 280, M = { t: 16, r: 14, b: 34, l: 44 };
+
+// Lines over weeks or seasons. Each series: { name, color, pts: [{ x, v, note }] }.
+// opts.unit labels values in the tooltip; opts.ymax fixes the top (100 for percentages).
+export function lineChart(xs, xLabel, series, label, opts = {}) {
+  const unit = opts.unit ?? " pts";
+  const ymax = opts.ymax || niceMax(Math.max(opts.ymin ?? 10, ...series.flatMap((s) => s.pts.map((p) => p.v))));
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  const step = iw / xs.length;
+  const X = (i) => M.l + step * i + step / 2;
+  const Y = (v) => M.t + ih - (v / ymax) * ih;
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="${esc(label)}">`;
+  for (let i = 0; i <= 4; i++) {
+    const v = (ymax / 4) * i;
+    s += `<line class="grid" x1="${M.l}" x2="${W - M.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${M.l - 6}" y="${Y(v) + 4}" text-anchor="end">${fmt(v, Number.isInteger(v) ? 0 : 1)}</text>`;
+  }
+  const every = xs.length > 14 ? 2 : 1;
+  xs.forEach((x, i) => { if (i % every === 0 || i === xs.length - 1) s += `<text class="axis" x="${X(i)}" y="${H - 14}" text-anchor="middle">${xLabel(x)}</text>`; });
+  for (const sr of series) {
+    // break the line where a player has no game (bye, injury, not on a roster yet)
+    let run = [];
+    const flush = () => { if (run.length > 1) s += `<polyline class="pline" stroke="${sr.color}" points="${run.join(" ")}"/>`; run = []; };
+    xs.forEach((x, i) => {
+      const p = sr.pts.find((q) => q.x === x);
+      if (!p) return flush();
+      run.push(`${X(i)},${Y(p.v)}`);
+    });
+    flush();
+    for (const p of sr.pts) {
+      const i = xs.indexOf(p.x);
+      if (i >= 0) s += `<circle class="pdot" cx="${X(i)}" cy="${Y(p.v)}" r="4" fill="${sr.color}"/>`;
+    }
+  }
+  xs.forEach((x, i) => {
+    const lines = series.map((sr) => { const p = sr.pts.find((q) => q.x === x); return `${sr.name}: ${p ? `${fmt(p.v)}${unit}${p.note ? ` ${p.note}` : ""}` : "no game"}`; });
+    s += `<rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}" data-tip="${esc(`${xLabel(x, true)}\n${lines.join("\n")}`)}"/>`;
+  });
+  s += `</svg>`;
+  const legend = series.map((sr) => `<span><i style="background:${sr.color}"></i>${esc(sr.name)}</span>`).join("");
+  return `<div class="legend">${legend}</div>${s}`;
 }
 
