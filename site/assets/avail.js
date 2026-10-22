@@ -19,6 +19,11 @@ export function loadDepth() {
 export const injuries = () => INJ;
 export const depth = () => DEPTH;
 
+// Short labels for narrow spots (the leaderboard on a phone); the full word stays in the
+// tooltip and for screen readers.
+const SHORT = { Questionable: "Q", Doubtful: "D", "Did not practice": "DNP", "Limited practice": "Ltd",
+  "IR, designated to return": "IR-R", Suspended: "Susp", "Exempt list": "Exempt" };
+
 // One tag object -> HTML. `week` is the week the site is previewing; a designation
 // from an earlier week is labeled with its week so it is never read as current.
 export function tagHTML(t, { block = false } = {}) {
@@ -27,7 +32,10 @@ export function tagHTML(t, { block = false } = {}) {
   const old = t.week !== null && t.week !== undefined && cur && t.week !== cur ? ` (week ${t.week})` : "";
   const why = t.injury ? `<span class="inj-why">${esc(t.injury.toLowerCase())}</span>` : "";
   const title = `${t.status}${t.injury ? `: ${t.injury}` : ""}${old}`;
-  return `<span class="inj inj-${old ? "old" : esc(t.level || "q")}${block ? " inj-block" : ""}" title="${esc(title)}">${esc(t.status)}${why ? ` · ${why}` : ""}${esc(old)}</span>`;
+  const short = SHORT[t.status] || t.status;
+  const label = short === t.status ? esc(t.status)
+    : `<span class="inj-full">${esc(t.status)}</span><span class="inj-short" aria-hidden="true">${esc(short)}</span>`;
+  return `<span class="inj inj-${old ? "old" : esc(t.level || "q")}${block ? " inj-block" : ""}" title="${esc(title)}">${label}${why ? ` · ${why}` : ""}${esc(old)}</span>`;
 }
 
 // True when the tag rules him out of the week being previewed (not last week's).

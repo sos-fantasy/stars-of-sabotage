@@ -537,3 +537,17 @@ td.dimcol { color: var(--muted); }
 .dchart h3 { margin: 0 0 4px; font: 400 18px/1.1 var(--display); text-transform: uppercase; }
 .dchart .chart-box { position: relative; border: 0; padding: 0; background: none; }
 .tgtrow th small { display: inline; margin-left: 6px; color: var(--muted); font-size: 11px; }
+/* Leaderboard: the sticky name column must stay narrow, or on a phone it covers the
+   stats that scroll under it. Injury tags wrap inside it instead of widening it. */
+#board td.player .inj { white-space: normal; max-width: 100%; }
+#board td.player { max-width: 230px; }
+@media (max-width: 720px) {
+  #board td.player { max-width: 150px; white-space: normal; }
+  #board td.player .inj { font-size: 10px; }
+}
+.inj-short { display: none; }
+@media (max-width: 720px) {
+  #board .inj-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #board .inj-short { display: inline; }
+  #board td.player { max-width: 160px; }
+}
