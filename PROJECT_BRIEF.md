@@ -591,3 +591,18 @@ Refresh: nflverse files were stamped 8:53 AM ET on October 21; our 6 and 10 AM r
 - Targets (not scored): a Tgt column in the leaderboard's Points view for ALL, RB, WR and TE (the Stats view already had it), and a "Targets, not scored" row on Compare when a pass catcher is on the board.
 
 Open item, to monitor and improve: data freshness. nflverse depth charts and injury reports lag team announcements by hours (Giants named J.J. McCarthy the week 7 starter on October 21; nflverse picked it up at 2:02 AM ET October 22, about a day after its previous copy). Options on the table: a manual override file with expiry, more frequent checks Wednesday to Sunday.
+
+## 35. Phase 1 and Phase 3 closed (October 22, 2026)
+
+Phase 1 exit test 3, stat-correction cycle: passed.
+- The Wednesday 10 PM ET correction run fired at 10:34 PM and published (deploy 3ffa0127). The Thursday 4 AM ET run fired at 4:41 AM and published (5a2220ac). Both succeeded.
+- Week 6 flipped to "final" in the 10 AM ET run (deploy 45d83c39, 10:39 AM ET).
+- No stat corrections touched week 6: all 346 player rows and every defense line match between Tuesday 10:37 AM ET (242b5cd2) and the final data.
+- No week 6 record alerts existed, so none had to change from "Potential record" to "Record".
+- With game day (October 19) and this test passed, Phase 1 is complete.
+
+Phase 3 exit check: passed. NFL Rush posted "NFL WORST Plays Of Week 6!" (VYkrrVhtMsE) Tuesday October 20 at 5:25 PM ET; the Wednesday 6:36 AM ET run added it with source "auto" and no manual entry. Phase 3 is complete.
+
+Giants QB: nflverse depth charts refreshed at 2:02 AM ET October 22; J.J. McCarthy is QB1 on Depth Charts and the Matchups starter (38.9 projected).
+
+Watch item: GitHub starts our hourly runs 30 to 45 minutes after the :07 cron time. The schedule checks the Eastern hour when the run starts, so a delay past 53 minutes would skip that slot. None skipped so far.
