@@ -20,7 +20,7 @@ DESCRIPTION = ("Sabotage fantasy football stats: NFL players and defenses ranked
 
 
 NAV = (("board", "./", "Leaderboard"), ("compare", "compare.html", "Compare"), ("defenses", "defenses.html", "Defenses"), ("video", "video.html", "Video"), ("matchups", "matchups.html", "Matchups"),
-       ("supers", "super-stars.html", "Super Stars"), ("method", "method.html", "Scoring"))
+       ("depth", "depth.html", "Depth Charts"), ("supers", "super-stars.html", "Super Stars"), ("method", "method.html", "Scoring"))
 
 HEAD_SEARCH = """<div class="hsearch" data-search role="search">
     <label class="sr-only" for="q-head">Search players and teams</label>
@@ -282,6 +282,24 @@ MATCHUPS_BODY = """
   <div class="ggrid" id="m-games"></div>
 </section>
 <p class="hint">Forecasts from <a href="https://open-meteo.com/">Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>). Expected scores come from the betting spread and total and are shown as game context only.</p>
+"""
+
+DEPTH_BODY = """
+<section class="phero">
+  <div>
+    <p class="eyebrow">Depth charts, <span id="d-week">this week</span></p>
+    <h1>Depth Charts</h1>
+    <p class="pmeta">Who starts at quarterback, running back, receiver, tight end and kicker, with today's injury designations. Anyone ruled out is crossed off and the next man up is marked as starting. The <a href="matchups.html">Matchups</a> page projects the same starters.</p>
+  </div>
+  <div class="ctl"><label for="d-team">Team</label><select id="d-team"></select></div>
+</section>
+<div id="d-body"><p class="loading">Loading&hellip;</p></div>
+<section aria-labelledby="d-changes-h">
+  <h2 id="d-changes-h">Changes in the last week</h2>
+  <p class="hint">Moves among the starters compared with the chart from seven days earlier, plus anyone starting in place of an injured teammate.</p>
+  <div id="d-changes"></div>
+</section>
+<p class="hint">Depth charts and injury reports from <a href="https://github.com/nflverse">nflverse</a>, refreshed through the day. Questionable, Doubtful and Out come from the team's final injury report of the week, usually posted two days before the game. Earlier in the week a player can show Did not practice or Limited practice. IR, PUP, NFI (non-football injury) and Suspended come from the league's roster lists. A designation from last week is labeled with its week until the new report is out. Doubtful players are counted as not playing.</p>
 """
 
 IMPROVE_BODY = """
@@ -598,7 +616,8 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     a = out / "assets"
     v = {"css": _hash(a / "styles.css")}
     # In dependency order: each module's imports are already hashed when it is rewritten.
-    for mod in ("foot", "common", "stats", "app", "player", "defenses", "compare", "videos", "matchups", "improvements"):
+    for mod in ("foot", "common", "stats", "avail", "app", "player", "defenses", "compare", "videos", "matchups",
+                "improvements", "depth"):
         src = (a / f"{mod}.js").read_text()
         for dep in [d for d in v if d != "css"]:
             src = src.replace(f'from "./{dep}.js"', f'from "./{dep}.js?v={v[dep]}"')
@@ -607,7 +626,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
 
     def tag(html: str) -> str:
         html = html.replace('href="assets/styles.css"', f'href="assets/styles.css?v={v["css"]}"')
-        for mod in ("foot", "common", "app", "player", "defenses", "compare", "videos", "matchups", "improvements"):
+        for mod in ("foot", "common", "app", "player", "defenses", "compare", "videos", "matchups", "improvements", "depth"):
             html = html.replace(f'src="assets/{mod}.js"', f'src="assets/{mod}.js?v={v[mod]}"')
         return html
     import json
@@ -640,6 +659,7 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     (out / "compare.html").write_text(page("Compare players | Stars of Sabotage", COMPARE_BODY, "compare", "compare"))
     (out / "matchups.html").write_text(page("Matchups and projections | Stars of Sabotage", MATCHUPS_BODY, "matchups", "matchups"))
     (out / "improvements.html").write_text(page("Projection review | Stars of Sabotage", IMPROVE_BODY, "matchups", "improvements"))
+    (out / "depth.html").write_text(page("Depth charts | Stars of Sabotage", DEPTH_BODY, "depth", "depth"))
     (out / "video.html").write_text(page("Reel Good Sabotage | Stars of Sabotage", VIDEO_BODY, "video", "videos"))
 
 

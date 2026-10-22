@@ -227,6 +227,14 @@ def main(argv=None) -> int:
     except Exception as e:
         print(f"[projections] skipped: {e}")
         proj = None
+    # Injury tags and depth charts come out of the same step; keep the last good copy
+    # if this run could not fetch them.
+    for key, name in (("_injuries", "injuries.json"), ("_depth", "depth.json")):
+        part = proj.pop(key, None) if proj else None
+        if part:
+            _write(data_out / name, part)
+        elif prev_data and (prev_data / name).exists():
+            shutil.copy2(prev_data / name, data_out / name)
     if proj is None and prev_data:
         proj = _read_json(prev_data / "projections.json")
     if proj:

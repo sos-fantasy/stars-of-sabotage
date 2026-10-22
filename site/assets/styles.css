@@ -491,3 +491,41 @@ ul.why li { margin: 3px 0; }
 .claude p { max-width: 72ch; }
 table.wrap td, table.wrap th { white-space: normal; }
 table.wrap td:nth-child(3) { min-width: 280px; }
+
+/* injury tags (avail.js) */
+.inj { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid var(--line-2); border-radius: 3px;
+  font-size: 11px; line-height: 1.6; letter-spacing: .02em; white-space: nowrap; color: var(--ink); text-transform: none; vertical-align: 1px; }
+.inj-why { color: var(--muted); }
+.inj-q { border-color: var(--yellow); }
+.inj-d, .inj-out { border-color: var(--rust-ink); color: var(--rust-ink); }
+.inj-p, .inj-old { border-style: dashed; color: var(--muted); }
+.inj-block { display: table; margin: 3px 0 0; }
+td.num .inj { margin-left: 0; }
+.infor { display: inline-block; margin-left: 6px; font-size: 11px; color: var(--yellow); letter-spacing: .02em; }
+.pavail { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 2px; }
+.pavail .inj { margin-left: 0; }
+table.cmp tr.nowrow td { vertical-align: top; }
+table.cmp tr.nowrow small { display: block; }
+
+/* depth chart page */
+.dhead h2 { margin: 18px 0 2px; }
+.dhead p { margin: 2px 0; }
+.dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 14px; margin: 12px 0 8px; }
+.dcol { background: var(--bg-2); border: 1px solid var(--line); padding: 10px 12px; }
+.dcol h3 { margin: 0 0 6px; font: 400 20px/1.1 var(--display); text-transform: uppercase; color: var(--yellow); }
+.dlist { list-style: none; margin: 0; padding: 0; }
+.dent { display: grid; grid-template-columns: 1.6em 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--line); }
+.dent:first-child { border-top: 0; }
+.drank { color: var(--muted); font-size: 12px; text-align: right; }
+.dent.on .dn a.plink { font-weight: 700; }
+.dent.gone .dn, .dent.gone .dn a.plink { text-decoration: line-through; text-decoration-color: var(--rust-ink); color: var(--muted); }
+.dslot { font-size: 11px; color: var(--yellow); letter-spacing: .06em; margin-left: 4px; }
+.dmove { font-size: 11px; margin-left: 6px; color: var(--muted); white-space: nowrap; }
+.dmove.up { color: var(--yellow); }
+.dmove.down { color: var(--rust-ink); }
+.dmove.new { color: var(--ink); border: 1px solid var(--line-2); padding: 0 4px; border-radius: 3px; }
+.dcard h3 a { color: var(--ink); text-decoration: none; }
+.dcard h3 a:hover { color: var(--yellow); }
+.dcard h3 .dim { font: 400 13px/1 var(--mono); text-transform: none; margin-left: 6px; }
+.dcard .glist li { grid-template-columns: 3.2em 1fr; }
+.dout { margin: 8px 0 0; font-size: 12px; color: var(--muted); }

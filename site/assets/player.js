@@ -1,6 +1,7 @@
 import { $, esc, toObjs, dataVersion, getJSON, NICK } from "./common.js";
 import { STAT, BY_POS, POS_NAME, GROUPS, fmt, sum, niceMax, wireTips, short, statPoints } from "./stats.js";
 import { loadMeta, fillFooter } from "./foot.js";
+import { loadInjuries, loadDepth, injuries, injTag, slotOf, slotText } from "./avail.js";
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
@@ -34,6 +35,20 @@ async function init() {
   $("#p-name").textContent = P.name;
   $("#p-meta").innerHTML = `${esc(P.position)} · <span title="${esc(NICK[P.team] || "")}">${esc(P.team)}</span> · ${P.first === P.last ? P.first : `${P.first} to ${P.last}`}`;
   render();
+  Promise.all([loadInjuries(), loadDepth()]).then(availLine);
+}
+
+// Today's injury designation and depth chart spot, for players active this season.
+function availLine() {
+  const inj = injuries();
+  if (!inj || inj.season !== P.last) return;
+  const tag = injTag(P.id);
+  const s = slotOf(P.id);
+  if (!tag && !s) return;
+  const el = document.createElement("p");
+  el.className = "pmeta pavail";
+  el.innerHTML = [tag, s ? `<a href="depth.html?team=${encodeURIComponent(s.team)}">${esc(slotText(P.id))}</a>` : ""].filter(Boolean).join(" ");
+  $("#p-meta").after(el);
 }
 
 function notFound() {

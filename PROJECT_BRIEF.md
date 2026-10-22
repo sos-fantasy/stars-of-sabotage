@@ -565,3 +565,19 @@ Targets are shown, not scored: a "Tgt" column in the leaderboard's Stats view (t
 
 Each award (saboteur of the week with a QB or non-QB version, pick six, butterfingers, kicker, defense) has 18 lines in `pipeline/stories.py`, one per regular-season week: week 1 uses line 1, week 18 line 18, playoff weeks wrap to line 1. No model call is needed; names and stats fill in from the scored data. Tests check 18 distinct lines per award, every placeholder fills, and house style (no em dashes, banned words).
 Owner edits (Word file, October 19, 2026) applied exactly: six QB lines changed or reordered (weeks 2, 4, 6, 7, 15, 17); week 6 is the Halloween line. A quarterback with two or more pick sixes in a game gets its own 18-line list ("Pick sixes"), with the count, the count as a word, the per-throw value (31) and the total; one pick six keeps the original list. Hand check: two pick sixes = 2 x 31 = 62 points.
+
+## 33. Injury tags and the Depth Charts page (owner, October 21, 2026)
+
+Owner asked for injury designations with the body part on every player list (Compare and Matchups first), and a depth chart section that stays current, feeds Matchups and Compare, and shows who plays in place of whom.
+
+Data, built by `pipeline/availability.py` each run into `data/injuries.json` and `data/depth.json`:
+- Game designation (Questionable, Doubtful, Out) and practice participation from nflverse `load_injuries`. Body part from the report, primary and secondary.
+- Reserve lists from nflverse `load_rosters_weekly`. Sub-codes checked against news reports on October 21, 2026: R01 IR; R48 IR, designated to return (James Conner); R04 PUP (Micah Parsons); R05 NFI (Giovanni Manu); R40 suspended (Montez Sweat). EXE is the commissioner's exempt list (nflreadr roster status dictionary). IR players show the last body part listed for them this season; "not injury related" notes are skipped.
+- Precedence: this week's designation, then reserve list, then this week's practice (Did not practice, Limited practice; full practice gets no tag). Monday and Tuesday, before a team's first report, last week's designation shows with "(week N)" and does not keep the player out of this week's lineup.
+- Depth charts from nflverse `load_depth_charts`, snapshots once or twice a day. Injured reserve players stay listed at the bottom of these charts, so availability is applied here. A snapshot under 90% of the team's median size over 14 days is treated as partial and skipped (New England's of October 21 had 56 rows against a usual 78, with no receivers or kicker). Each position then comes from the latest full snapshot that lists it. Kickers appear as PK or K.
+- Starters: QB1, RB1-2, WR1-3, TE1-2, K. Out, Doubtful, IR, PUP, NFI, suspended and exempt players are skipped and the next man up starts, marked "in for" the player he replaces. Matchups projects exactly these starters (one shared function), so the two pages always agree.
+- Week-over-week moves compare with the latest full snapshot from at least seven days earlier.
+
+Pages: tags on the leaderboard (current season only), player pages (with depth chart spot), Compare (chips plus three rows: this week's status, depth chart, projection), Matchups (top lists and every game card, with "in for"), and the new Depth Charts page (`depth.html?team=`, menu label Depth Charts): all teams' starters, or one team's full chart at QB, RB, WR, TE and K, plus changes in the last week. Not added to Super Stars, the Wreckage Report or the review page, which describe past games.
+
+Refresh: nflverse files were stamped 8:53 AM ET on October 21; our 6 and 10 AM runs pick up the morning refresh. How often nflverse refreshes injuries during the day is unconfirmed.
