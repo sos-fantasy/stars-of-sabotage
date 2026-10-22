@@ -111,19 +111,28 @@ def test_partial_snapshot_is_skipped_and_kickers_listed_as_k():
 
 
 def test_usage_by_week_and_last_game():
-    # Player x: CHI weeks 1 and 2, traded to GB for week 3. Player y: CHI, week 2 only.
-    # Snap counts: x week 1 = 0.62 -> 62%, week 2 missing -> None.
-    scores = pl.DataFrame({"player_id": ["x", "x", "x", "y"], "season": [2026] * 4, "team": ["CHI", "CHI", "GB", "CHI"],
-                           "week": [1, 2, 3, 2], "n_carries": [10, 12, 3, 0], "n_targets": [2, 4, 1, 6],
-                           "sabotage_pts": [14, 20, 5, 12]})
-    snaps = pl.DataFrame({"player_id": ["x"], "season": [2026], "week": [1], "offense_pct": [0.62]})
+    # CHI played weeks 1, 2, 4 (bye week 3). x: CHI weeks 1 and 2, traded to GB for week 3.
+    # y: CHI week 2 only. z: CHI week 4 on the field (5% of snaps) with no stat line.
+    scores = pl.DataFrame({"player_id": ["x", "x", "x", "y", "w"], "season": [2026] * 5,
+                           "team": ["CHI", "CHI", "GB", "CHI", "CHI"], "week": [1, 2, 3, 2, 4],
+                           "n_carries": [10, 12, 3, 0, 0], "n_targets": [2, 4, 1, 6, 3],
+                           "sabotage_pts": [14, 20, 5, 12, 2]})
+    snaps = pl.DataFrame({"player_id": ["x", "z"], "season": [2026, 2026], "week": [1, 4],
+                          "offense_pct": [0.62, 0.05], "team": ["CHI", "CHI"]})
     depth = {"teams": {"GB": {"RB": [{"id": "x", "name": "X", "rank": 1}]},
-                       "CHI": {"WR": [{"id": "y", "name": "Y", "rank": 1}, {"id": None, "name": "No Id", "rank": 2}]}}}
+                       "CHI": {"WR": [{"id": "y", "name": "Y", "rank": 1}, {"id": None, "name": "No Id", "rank": 2}],
+                               "QB": [{"id": "z", "name": "Z", "rank": 2}]}}}
     A.add_usage(depth, scores, snaps, 2026)
-    x = depth["teams"]["GB"]["RB"][0]
+    chi, gb = depth["teams"]["CHI"], depth["teams"]["GB"]
+    assert chi["games"] == [1, 2, 4] and gb["games"] == [3]
+    x = gb["RB"][0]
     assert x["last"] == {"week": 3, "car": 3, "tgt": 1, "snap": None, "pts": 5, "team": "GB"}
-    # Chart uses only his games for the team he is on now (GB): week 3.
-    assert depth["teams"]["GB"]["usage"] == {"x": [[3, 3, 1, None, 5]]}
-    assert depth["teams"]["CHI"]["usage"] == {"y": [[2, 0, 6, None, 12]]}
-    assert "last" not in depth["teams"]["CHI"]["WR"][1]
-    assert depth["weeks"] == [1, 2, 3]
+    # Only his GB games count for GB.
+    assert gb["usage"] == {"x": [[3, 3, 1, None, 5, 1]]}
+    # y: zeros (played 0) for CHI weeks 1 and 4; nothing for the bye week 3.
+    assert chi["usage"]["y"] == [[1, 0, 0, 0, 0, 0], [2, 0, 6, None, 12, 1], [4, 0, 0, 0, 0, 0]]
+    # z: snaps but no stat line in week 4 still counts as a game: 5% of snaps, 0 points.
+    assert chi["usage"]["z"] == [[1, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0], [4, 0, 0, 5, 0, 1]]
+    assert chi["QB"][0]["last"]["snap"] == 5
+    assert "last" not in chi["WR"][1]
+    assert depth["weeks"] == [1, 2, 3, 4]

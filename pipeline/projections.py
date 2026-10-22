@@ -70,7 +70,7 @@ def load_snaps(seasons) -> pl.DataFrame:
     ids = nfl.load_players().select("gsis_id", "pfr_id").drop_nulls()
     s = nfl.load_snap_counts([x for x in seasons if x >= 2013]).filter(pl.col("game_type") == "REG")
     return s.join(ids, left_on="pfr_player_id", right_on="pfr_id").select(
-        pl.col("gsis_id").alias("player_id"), "season", "week", "offense_pct")
+        pl.col("gsis_id").alias("player_id"), "season", "week", "offense_pct", "team")
 
 
 def _fill_ctx(df: pl.DataFrame, cols) -> pl.DataFrame:

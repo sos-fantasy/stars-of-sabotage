@@ -208,28 +208,43 @@ USAGE_POS = ("QB", "RB", "WR", "TE", "K")
 def add_usage(depth: dict, scores: pl.DataFrame, snaps: pl.DataFrame | None, season: int) -> dict:
     """Week-by-week usage for every player on a depth chart, this season.
 
-    Per player: [week, carries, targets, snap %, Sabotage points, team]. Snap % is the
-    share of the team's offensive snaps (nflverse snap counts, from Pro Football
-    Reference). Route participation is not published for the current season, so snap
-    share stands in for it. Each entry also gets `last`: his most recent game.
-    Charts use only weeks with his current team, so a traded player's old team does
-    not count as usage here."""
-    cur = scores.filter(pl.col("season") == season).select(
-        "player_id", "team", "week", "n_carries", "n_targets", "sabotage_pts")
+    A game counts if he has a stat line (nflverse player stats) or any snaps (nflverse
+    snap counts, from Pro Football Reference). Snap counts matter: about one in nine
+    skill-position appearances has snaps but no stat line (Case Keenum, CHI week 4,
+    1% of snaps). Snap % is the share of the team's offensive snaps. Route
+    participation is not published for the current season, so snap share stands in.
+
+    Per team: `games`, the weeks the team played (byes left out), and `usage`, per
+    player [week, carries, targets, snap %, Sabotage points, played]. Weeks the team
+    played without him are filled with zeros and played = 0, so the usage lines run
+    through every game (owner, October 22). Only his games for this team count, so a
+    traded player's old team does not show as usage. Each entry also gets `last`: his
+    most recent game, for any team."""
+    sc = scores.filter(pl.col("season") == season).select(
+        "player_id", "team", pl.col("week").cast(pl.Int64), "n_carries", "n_targets", "sabotage_pts")
     if snaps is not None and snaps.height:
-        sn = (snaps.filter(pl.col("season") == season)
-              .select("player_id", pl.col("week").cast(cur.schema["week"]), "offense_pct")
-              .unique(["player_id", "week"]))
-        cur = cur.join(sn, on=["player_id", "week"], how="left")
+        cols = ["player_id", pl.col("week").cast(pl.Int64), "offense_pct"]
+        if "team" in snaps.columns:
+            cols.append(pl.col("team").alias("team_snap"))
+        sn = snaps.filter(pl.col("season") == season).select(*cols).unique(["player_id", "week"])
+        if "team_snap" not in sn.columns:
+            sn = sn.with_columns(pl.lit(None, dtype=pl.Utf8).alias("team_snap"))
+        cur = sc.join(sn, on=["player_id", "week"], how="full", coalesce=True)
+        cur = cur.with_columns(pl.coalesce("team", "team_snap").alias("team")).drop("team_snap")
     else:
-        cur = cur.with_columns(pl.lit(None, dtype=pl.Float64).alias("offense_pct"))
+        cur = sc.with_columns(pl.lit(None, dtype=pl.Float64).alias("offense_pct"))
+    cur = cur.filter(pl.col("team").is_not_null()).with_columns(
+        [pl.col(c).fill_null(0) for c in ("n_carries", "n_targets", "sabotage_pts")])
     games: dict[str, list] = {}
+    team_weeks: dict[str, set] = {}
     for r in cur.sort("week").iter_rows(named=True):
         pct = None if r["offense_pct"] is None else int(round(r["offense_pct"] * 100))
         games.setdefault(r["player_id"], []).append(
             [r["week"], r["n_carries"], r["n_targets"], pct, r["sabotage_pts"], r["team"]])
-    weeks = sorted({g[0] for gs in games.values() for g in gs})
+        team_weeks.setdefault(r["team"], set()).add(r["week"])
+    weeks = sorted({w for ws in team_weeks.values() for w in ws})
     for team, t in depth["teams"].items():
+        tw = sorted(team_weeks.get(team, set()))
         usage = {}
         for pos in USAGE_POS:
             for e in t.get(pos, []):
@@ -239,10 +254,11 @@ def add_usage(depth: dict, scores: pl.DataFrame, snaps: pl.DataFrame | None, sea
                 last = gs[-1]
                 e["last"] = {"week": last[0], "car": last[1], "tgt": last[2], "snap": last[3], "pts": last[4],
                              "team": last[5]}
-                mine = [g[:5] for g in gs if g[5] == team]
+                mine = {g[0]: g[:5] + [1] for g in gs if g[5] == team}
                 if mine and pos != "K":
-                    usage[e["id"]] = mine
+                    usage[e["id"]] = [mine.get(w, [w, 0, 0, 0, 0, 0]) for w in tw]
         t["usage"] = usage
+        t["games"] = tw
     depth["weeks"] = weeks
     return depth
 
