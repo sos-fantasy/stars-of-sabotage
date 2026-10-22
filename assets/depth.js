@@ -1,7 +1,7 @@
 import { $, esc, NICK, CITY } from "./common.js?v=dd86e435db";
 import { loadMeta, fillFooter, fmtET } from "./foot.js?v=949d944f7b";
 import { lineChart, wireTips, fmt } from "./stats.js?v=b43e399a02";
-import { loadInjuries, loadDepth, tagHTML, isOut } from "./avail.js?v=7a394d9948";
+import { loadInjuries, loadDepth, tagHTML, isOut } from "./avail.js?v=2b6f548bac";
 
 // Every team's depth chart at QB, RB, WR, TE and K, with today's injury designations.
 // Players who are out are crossed off and the next man up is marked as starting,

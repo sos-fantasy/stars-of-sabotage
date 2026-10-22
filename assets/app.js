@@ -1,5 +1,5 @@
 import { loadMeta, fillFooter, fmtET, STATUS_TEXT } from "./foot.js?v=949d944f7b";
-import { loadInjuries, injTag } from "./avail.js?v=7a394d9948";
+import { loadInjuries, injTag } from "./avail.js?v=2b6f548bac";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

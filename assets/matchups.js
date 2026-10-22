@@ -1,6 +1,6 @@
 import { $, esc, NICK } from "./common.js?v=dd86e435db";
 import { loadMeta, fillFooter } from "./foot.js?v=949d944f7b";
-import { loadInjuries, loadDepth, injTag, slotOf } from "./avail.js?v=7a394d9948";
+import { loadInjuries, loadDepth, injTag, slotOf } from "./avail.js?v=2b6f548bac";
 
 // The coming week: every game with its kickoff, roof and forecast, and projected
 // Sabotage points by position. Projections are "if he plays" and come with a range.

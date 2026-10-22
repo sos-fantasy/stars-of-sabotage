@@ -1,7 +1,7 @@
 import { $, esc, toObjs, dataVersion, getJSON, NICK, initSearch } from "./common.js?v=dd86e435db";
 import { STAT, BY_POS, GROUPS, fmt, sum, niceMax, wireTips, statPoints, lineChart } from "./stats.js?v=b43e399a02";
 import { loadMeta, fillFooter } from "./foot.js?v=949d944f7b";
-import { loadInjuries, loadDepth, injuries, injTag, slotOf } from "./avail.js?v=7a394d9948";
+import { loadInjuries, loadDepth, injuries, injTag, slotOf } from "./avail.js?v=2b6f548bac";
 
 // Compare up to 4 players over one shared season and week range.
 // Each player keeps the color slot he was added with, so removing someone never repaints the rest.
