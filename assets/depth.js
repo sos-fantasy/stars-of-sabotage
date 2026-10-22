@@ -116,9 +116,11 @@ const USAGE = [
 const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];
 function usageCharts(t) {
   const T = D.teams[t], U = T.usage || {};
-  const weeks = D.weeks || [];
-  if (!weeks.length) return "";
-  const xs = Array.from({ length: Math.max(...weeks) }, (_, i) => i + 1);
+  // The team's own game weeks: a bye is left off the axis rather than drawn as zero.
+  const xs = T.games || [];
+  if (!xs.length) return "";
+  const allWeeks = Array.from({ length: Math.max(...xs) }, (_, i) => i + 1);
+  const byes = allWeeks.filter((w) => !xs.includes(w));
   const charts = USAGE.map((u) => {
     const ps = (T[u.pos] || []).filter((e) => U[e.id] && U[e.id].some((g) => g[u.i] !== null && g[u.i] !== undefined));
     const total = (e) => U[e.id].reduce((a, g) => a + (g[u.i] || 0), 0);
@@ -126,7 +128,9 @@ function usageCharts(t) {
     if (!top.length) return "";
     const series = top.map((e, k) => ({
       name: e.name, color: COLORS[k],
-      pts: U[e.id].filter((g) => g[u.i] !== null && g[u.i] !== undefined).map((g) => ({ x: g[0], v: g[u.i] })),
+      // Weeks he did not play are zeros (played flag 0), so the line runs through them.
+      pts: U[e.id].filter((g) => g[u.i] !== null && g[u.i] !== undefined)
+        .map((g) => ({ x: g[0], v: g[u.i], note: g[5] === 0 ? " (did not play)" : "" })),
     }));
     const left = ps.length - top.length;
     return `<section class="dchart"><h3>${esc(u.label)}</h3>
@@ -134,7 +138,7 @@ function usageCharts(t) {
       ${left > 0 ? `<p class="hint">${left} more ${left === 1 ? "player" : "players"} with fewer ${u.pos === "QB" ? "snaps" : u.unit.trim()} not shown.</p>` : ""}</section>`;
   }).join("");
   return `<section class="dusage" aria-labelledby="d-usage-h"><h2 id="d-usage-h">Usage by week</h2>
-    <p class="hint">Games with the ${esc(NICK[t] || t)} only. A gap means no game that week (bye, injury, inactive, or not on the team yet). Snap share is the share of the team's offensive plays he was on the field for, from nflverse snap counts. Route participation would be a sharper measure for receivers, but it is not published during the season.</p>
+    <p class="hint">Every ${esc(NICK[t] || t)} game this season${byes.length ? ` (bye: week ${byes.join(", ")})` : ""}. A player who did not play that week, or was not on the team yet, sits at zero. Snap share is the share of the team's offensive plays he was on the field for, from nflverse snap counts. Route participation would be a sharper measure for receivers, but it is not published during the season.</p>
     <div class="dcharts">${charts}</div></section>`;
 }
 
