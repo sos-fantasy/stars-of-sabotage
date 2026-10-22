@@ -405,7 +405,7 @@ Story timing: awards cover the latest week once at least half its games are fina
 
 ## 19. Phase 1 status (October 16, 2026)
 
-Live at starsofsabotage.com/preview/ (noindex while in preview). Hostinger deploys the `deploy` branch into `public_html/preview` on each push. GitHub Actions workflow `.github/workflows/update.yml` runs hourly at :07 UTC; `pipeline/schedule.py` decides in Eastern time whether to work (daily 6 and 10 AM; game days 4, 7, 10 PM; overnight 1 and 4 AM after game days; Wednesday 10 PM and Thursday 4 AM for corrections). It publishes only when output changed, and at least once a day via the `checked_on` date, which also keeps the public repo active. A week is final at 10 AM ET on the first Thursday after its last game.
+Live at starsofsabotage.com (moved from /preview on October 21, 2026; search indexing on). Hostinger deploys the `deploy` branch into `public_html` on each push. GitHub Actions workflow `.github/workflows/update.yml` runs hourly at :07 UTC; `pipeline/schedule.py` decides in Eastern time whether to work (daily 6 and 10 AM; game days 4, 7, 10 PM; overnight 1 and 4 AM after game days; Wednesday 10 PM and Thursday 4 AM for corrections). It publishes only when output changed, and at least once a day via the `checked_on` date, which also keeps the public repo active. A week is final at 10 AM ET on the first Thursday after its last game.
 
 To move off /preview: point the Hostinger deployment at `public_html`, and set `SOS_NOINDEX` to "0" in the workflow.
 
