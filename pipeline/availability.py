@@ -202,6 +202,51 @@ def starters(teams: dict) -> pl.DataFrame:
                                       "team": pl.Utf8, "slot": pl.Utf8})
 
 
+USAGE_POS = ("QB", "RB", "WR", "TE", "K")
+
+
+def add_usage(depth: dict, scores: pl.DataFrame, snaps: pl.DataFrame | None, season: int) -> dict:
+    """Week-by-week usage for every player on a depth chart, this season.
+
+    Per player: [week, carries, targets, snap %, Sabotage points, team]. Snap % is the
+    share of the team's offensive snaps (nflverse snap counts, from Pro Football
+    Reference). Route participation is not published for the current season, so snap
+    share stands in for it. Each entry also gets `last`: his most recent game.
+    Charts use only weeks with his current team, so a traded player's old team does
+    not count as usage here."""
+    cur = scores.filter(pl.col("season") == season).select(
+        "player_id", "team", "week", "n_carries", "n_targets", "sabotage_pts")
+    if snaps is not None and snaps.height:
+        sn = (snaps.filter(pl.col("season") == season)
+              .select("player_id", pl.col("week").cast(cur.schema["week"]), "offense_pct")
+              .unique(["player_id", "week"]))
+        cur = cur.join(sn, on=["player_id", "week"], how="left")
+    else:
+        cur = cur.with_columns(pl.lit(None, dtype=pl.Float64).alias("offense_pct"))
+    games: dict[str, list] = {}
+    for r in cur.sort("week").iter_rows(named=True):
+        pct = None if r["offense_pct"] is None else int(round(r["offense_pct"] * 100))
+        games.setdefault(r["player_id"], []).append(
+            [r["week"], r["n_carries"], r["n_targets"], pct, r["sabotage_pts"], r["team"]])
+    weeks = sorted({g[0] for gs in games.values() for g in gs})
+    for team, t in depth["teams"].items():
+        usage = {}
+        for pos in USAGE_POS:
+            for e in t.get(pos, []):
+                gs = games.get(e["id"]) if e["id"] else None
+                if not gs:
+                    continue
+                last = gs[-1]
+                e["last"] = {"week": last[0], "car": last[1], "tgt": last[2], "snap": last[3], "pts": last[4],
+                             "team": last[5]}
+                mine = [g[:5] for g in gs if g[5] == team]
+                if mine and pos != "K":
+                    usage[e["id"]] = mine
+        t["usage"] = usage
+    depth["weeks"] = weeks
+    return depth
+
+
 def build(season: int, week: int, now: datetime, log=print) -> tuple[dict | None, dict | None, set[str]]:
     """Returns (injuries.json, depth.json, unavailable ids). Each part fails on its own."""
     import nflreadpy as nfl

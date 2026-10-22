@@ -1,5 +1,5 @@
 import { $, esc, toObjs, dataVersion, getJSON, NICK, initSearch } from "./common.js";
-import { STAT, BY_POS, GROUPS, fmt, sum, niceMax, wireTips, statPoints } from "./stats.js";
+import { STAT, BY_POS, GROUPS, fmt, sum, niceMax, wireTips, statPoints, lineChart } from "./stats.js";
 import { loadMeta, fillFooter } from "./foot.js";
 import { loadInjuries, loadDepth, injuries, injTag, slotOf } from "./avail.js";
 
@@ -191,8 +191,15 @@ function sideBySide(data, season) {
     body += `<tr><th scope="row">${esc(s.label)}</th>${cell(pts.map((v, i) => per(v, games[i])), (v, i) =>
       v === null ? "" : `${fmt(per(ns[i], games[i]), dec)}<small>${fmt(v, dec)} pts</small>`)}</tr>`;
   }
+  // Targets: not scored, but they show whether the offense is trying to get him the ball.
+  // nflverse has no targets for 2003 to 2008, so any game without a count blanks the cell.
+  const catchers = data.some((d) => ["RB", "FB", "WR", "TE"].includes(posOf(d.p, season)));
+  if (catchers) {
+    const tg = data.map((d) => (d.wk.length && d.wk.every((r) => r.n_targets !== null && r.n_targets !== undefined) ? per(sum(d.wk, "n_targets"), games[data.indexOf(d)]) : null));
+    body += `<tr class="tgtrow"><th scope="row">Targets <small>not scored</small></th>${cell(tg, (v) => (v === null ? "" : fmt(v, dec)))}</tr>`;
+  }
   return `<div class="table-wrap plain"><table class="cmp">${head}${body}</table></div>
-    <p class="hint">Each cell shows the count, with the Sabotage points it produced underneath. Yellow marks the player with the most points in that row.</p>`;
+    <p class="hint">Each cell shows the count, with the Sabotage points it produced underneath. Yellow marks the leader in that row. Targets earn no points; they show how often the team threw his way.</p>`;
 }
 
 // Rows for this week: injury designation, depth chart spot, and projection.
@@ -213,45 +220,6 @@ function thisWeek(data) {
 }
 
 // ---------- charts ----------
-const W = 760, H = 280, M = { t: 16, r: 14, b: 34, l: 44 };
-
-function lineChart(xs, xLabel, series, label) {
-  const ymax = niceMax(Math.max(10, ...series.flatMap((s) => s.pts.map((p) => p.v))));
-  const iw = W - M.l - M.r, ih = H - M.t - M.b;
-  const step = iw / xs.length;
-  const X = (i) => M.l + step * i + step / 2;
-  const Y = (v) => M.t + ih - (v / ymax) * ih;
-  let s = `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="${esc(label)}">`;
-  for (let i = 0; i <= 4; i++) {
-    const v = (ymax / 4) * i;
-    s += `<line class="grid" x1="${M.l}" x2="${W - M.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${M.l - 6}" y="${Y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
-  }
-  const every = xs.length > 14 ? 2 : 1;
-  xs.forEach((x, i) => { if (i % every === 0 || i === xs.length - 1) s += `<text class="axis" x="${X(i)}" y="${H - 14}" text-anchor="middle">${xLabel(x)}</text>`; });
-  for (const sr of series) {
-    // break the line where a player has no game (bye, injury, not on a roster yet)
-    let run = [];
-    const flush = () => { if (run.length > 1) s += `<polyline class="pline" stroke="${sr.color}" points="${run.join(" ")}"/>`; run = []; };
-    xs.forEach((x, i) => {
-      const p = sr.pts.find((q) => q.x === x);
-      if (!p) return flush();
-      run.push(`${X(i)},${Y(p.v)}`);
-    });
-    flush();
-    for (const p of sr.pts) {
-      const i = xs.indexOf(p.x);
-      if (i >= 0) s += `<circle class="pdot" cx="${X(i)}" cy="${Y(p.v)}" r="4" fill="${sr.color}"/>`;
-    }
-  }
-  xs.forEach((x, i) => {
-    const lines = series.map((sr) => { const p = sr.pts.find((q) => q.x === x); return `${sr.name}: ${p ? `${fmt(p.v)} pts${p.note ? ` ${p.note}` : ""}` : "no game"}`; });
-    s += `<rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}" data-tip="${esc(`${xLabel(x, true)}\n${lines.join("\n")}`)}"/>`;
-  });
-  s += `</svg>`;
-  const legend = series.map((sr) => `<span><i style="background:${sr.color}"></i>${esc(sr.name)}</span>`).join("");
-  return `<div class="legend">${legend}</div>${s}`;
-}
-
 function weekLines(data, season) {
   const n = weeksIn(season), from = state.from || 1, to = state.to || n;
   const xs = Array.from({ length: to - from + 1 }, (_, i) => from + i);

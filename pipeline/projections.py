@@ -312,6 +312,8 @@ def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
         log(f"[projections] snap counts unavailable: {e}")
         snaps = None
     players = player_projections(hist, up, sched_all, cfg, target_t, wind_override=wind, snaps=snaps)
+    if depth:
+        A.add_usage(depth, hist, snaps, season)
 
     # Defenses
     dfr = []

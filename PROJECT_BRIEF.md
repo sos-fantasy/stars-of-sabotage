@@ -581,3 +581,13 @@ Data, built by `pipeline/availability.py` each run into `data/injuries.json` and
 Pages: tags on the leaderboard (current season only), player pages (with depth chart spot), Compare (chips plus three rows: this week's status, depth chart, projection), Matchups (top lists and every game card, with "in for"), and the new Depth Charts page (`depth.html?team=`, menu label Depth Charts): all teams' starters, or one team's full chart at QB, RB, WR, TE and K, plus changes in the last week. Not added to Super Stars, the Wreckage Report or the review page, which describe past games.
 
 Refresh: nflverse files were stamped 8:53 AM ET on October 21; our 6 and 10 AM runs pick up the morning refresh. How often nflverse refreshes injuries during the day is unconfirmed.
+
+## 34. Usage on the Depth Charts page, targets everywhere (owner, October 22, 2026)
+
+- Depth Charts teams sort by team name (Bears, Bengals, Bills), in the menu, the all-teams grid and the changes table.
+- Every player on the depth chart shows his most recent game: snap share, carries (RB), targets (RB, WR, TE) and Sabotage points, with the team if it was a different one.
+- Team view adds four usage charts by week: QB share of offensive snaps, RB rushing attempts, WR targets, TE targets. Up to four players per chart (the validated color slots), chosen by season total, colored in depth chart order. Only games with his current team count.
+- Route percentage was asked for. nflverse has no route data for the current season: `load_participation` covers 2016 to 2025 and is published after the season; snap counts, Next Gen Stats, PFR advanced stats and FTN charting carry no routes (checked October 22, 2026). Snap share stands in and is labeled as snap share. Paid sources (PFF and similar) carry routes.
+- Targets (not scored): a Tgt column in the leaderboard's Points view for ALL, RB, WR and TE (the Stats view already had it), and a "Targets, not scored" row on Compare when a pass catcher is on the board.
+
+Open item, to monitor and improve: data freshness. nflverse depth charts and injury reports lag team announcements by hours (Giants named J.J. McCarthy the week 7 starter on October 21; nflverse picked it up at 2:02 AM ET October 22, about a day after its previous copy). Options on the table: a manual override file with expiry, more frequent checks Wednesday to Sunday.
