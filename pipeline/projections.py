@@ -23,7 +23,6 @@ LABEL = {"n_incomplete": "incompletions", "n_sacks": "sacks", "n_carries": "carr
          "n_fumbles": "fumbles", "n_fumbles_lost": "fumbles lost", "n_ints": "interceptions", "n_pick_sixes": "pick sixes"}
 HALF_LIFE, K_BASE = 3, 2
 TRAIN_YEARS = 9
-OUT_STATUSES = {"Out", "Doubtful", "IR", "Injured Reserve", "PUP", "Suspended"}
 
 
 def kmap(cols):
@@ -281,18 +280,15 @@ def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
     hist = P.load_history(data_out, [s for s in seasons if (data_out / f"scores-{s}.json").exists()])
     target_t = season * 100 + wk
 
-    try:
-        inj = nfl.load_injuries(season).filter((pl.col("week") == wk) & pl.col("report_status").is_in(list(OUT_STATUSES)))
-        out_ids = set(inj["gsis_id"].drop_nulls().to_list())
-    except Exception as e:
-        log(f"[projections] injuries unavailable: {e}")
-        out_ids = set()
+    # Injury report and reserve lists (IR, PUP, NFI, suspended), plus depth charts.
+    import availability as A
+    injuries, depth, out_ids = A.build(season, wk, now, log=log)
     # Who to project: each team's starters from its latest depth chart (QB1, RB1-2,
-    # WR1-3, TE1-2, K), skipping anyone ruled out and moving the next man up.
-    try:
-        recent = starters_from_depth(nfl.load_depth_charts(season), out_ids)
-    except Exception as e:
-        log(f"[projections] depth charts unavailable ({e}); using recent games instead")
+    # WR1-3, TE1-2, K), skipping anyone unavailable and moving the next man up.
+    if depth and depth.get("teams"):
+        recent = A.starters(depth["teams"])
+    else:
+        log("[projections] depth charts unavailable; using recent games instead")
         recent = _recent_players(hist, season, out_ids)
     sides = pl.concat([
         games.select("game_id", pl.col("home_team").alias("team"), pl.col("away_team").alias("opponent_team")),
@@ -353,27 +349,8 @@ def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
     log(f"[projections] {season} week {wk}: {len(plist)} players, {len(dlist)} defenses, {len(out_games)} games, "
         f"{sum(1 for g in out_games if g['weather'] and not g['weather'].get('indoor'))} forecasts")
     return {"season": season, "week": wk, "generated": now.isoformat(timespec="minutes"),
-            "games": out_games, "players": plist, "defenses": dlist}
-
-
-DEPTH = [("QB", "QB", 1), ("RB", "RB", 2), ("WR", "WR", 3), ("TE", "TE", 2), ("PK", "K", 1)]
-
-
-def starters_from_depth(dc: pl.DataFrame, out_ids: set) -> pl.DataFrame:
-    """Starters from each team's most recent depth chart. Rank order within a position;
-    a player ruled out is skipped and the next one moves up."""
-    latest = dc.group_by("team").agg(pl.col("dt").max().alias("_m"))
-    d = (dc.join(latest, on="team").filter((pl.col("dt") == pl.col("_m")) & pl.col("gsis_id").is_not_null())
-         .unique(["team", "pos_abb", "gsis_id"]).sort(["team", "pos_abb", "pos_rank"]))
-    rows = []
-    for abb, pos, n in DEPTH:
-        sub = d.filter(pl.col("pos_abb") == abb)
-        for team, grp in sub.group_by("team"):
-            picked = [r for r in grp.sort("pos_rank").iter_rows(named=True) if r["gsis_id"] not in out_ids][:n]
-            for i, r in enumerate(picked):
-                rows.append({"player_id": r["gsis_id"], "player_display_name": r["player_name"], "position": pos,
-                             "team": team[0], "slot": pos if n == 1 else f"{pos}{i + 1}"})
-    return pl.DataFrame(rows)
+            "games": out_games, "players": plist, "defenses": dlist,
+            "_injuries": injuries, "_depth": depth}
 
 
 def _recent_players(hist, season, out_ids) -> pl.DataFrame:

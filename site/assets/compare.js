@@ -1,12 +1,17 @@
 import { $, esc, toObjs, dataVersion, getJSON, NICK, initSearch } from "./common.js";
 import { STAT, BY_POS, GROUPS, fmt, sum, niceMax, wireTips, statPoints } from "./stats.js";
 import { loadMeta, fillFooter } from "./foot.js";
+import { loadInjuries, loadDepth, injuries, injTag, slotOf } from "./avail.js";
 
 // Compare up to 4 players over one shared season and week range.
 // Each player keeps the color slot he was added with, so removing someone never repaints the rest.
 const MAX = 4;
 const SLOT_COLOR = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];
 const params = new URLSearchParams(location.search);
+let PROJ = null;
+// Injury tags, depth chart spots and projections describe this week, so they apply
+// only to players who are active this season.
+const isCurrent = (p) => { const inj = injuries(); return inj && inj.season === p.last; };
 const state = {
   players: [],                       // { slot, id, name, position, team, seasons, weeks }
   season: params.get("season") || "",
@@ -45,7 +50,9 @@ async function init() {
     update();
   };
   const ids = (params.get("ids") || "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, MAX);
-  const loaded = await Promise.all(ids.map((id) => loadPlayer(id).catch(() => null)));
+  const projP = fetch(`data/projections.json?t=${Math.floor(Date.now() / 300000)}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const [loaded, , , proj] = await Promise.all([Promise.all(ids.map((id) => loadPlayer(id).catch(() => null))), loadInjuries(), loadDepth(), projP]);
+  PROJ = proj;
   loaded.forEach((p, i) => p && state.players.push({ ...p, slot: i }));
   update(false);
 }
@@ -99,7 +106,7 @@ function render(list) {
   // chips and picker
   $("#c-chips").innerHTML = players.map((p) => `<li class="chip" style="--c:${SLOT_COLOR[p.slot]}">
       <i aria-hidden="true"></i><a href="player.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a>
-      <span class="meta">${esc(p.position)} · ${esc(p.team)}</span>
+      <span class="meta">${esc(p.position)} · ${esc(p.team)}</span>${isCurrent(p) ? injTag(p.id) : ""}
       <button type="button" data-remove="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">×</button></li>`).join("");
   $("#c-pick").hidden = players.length >= MAX;
   $("#c-pick-hint").textContent = players.length >= MAX ? "Four players is the limit. Remove one to add another."
@@ -173,7 +180,8 @@ function sideBySide(data, season) {
   };
   const games = data.map((d) => d.wk.length);
   const head = `<tr><th scope="col">Stat</th>${data.map((d) => `<th scope="col" class="num pcol" style="--c:${SLOT_COLOR[d.p.slot]}"><i aria-hidden="true"></i>${esc(d.p.name)}</th>`).join("")}</tr>`;
-  let body = `<tr><th scope="row">Games</th>${games.map((g) => `<td class="num">${g || `<span class="dim">none</span>`}</td>`).join("")}</tr>`;
+  let body = thisWeek(data);
+  body += `<tr><th scope="row">Games</th>${games.map((g) => `<td class="num">${g || `<span class="dim">none</span>`}</td>`).join("")}</tr>`;
   const totals = data.map((d) => sum(d.wk, "sabotage_pts"));
   body += `<tr class="totrow"><th scope="row">Sabotage points${pg ? " per game" : ""}</th>${cell(totals.map((t, i) => per(t, games[i])), (v) => (v === null ? "" : fmt(v, dec)))}</tr>`;
   for (const k of keys) {
@@ -185,6 +193,23 @@ function sideBySide(data, season) {
   }
   return `<div class="table-wrap plain"><table class="cmp">${head}${body}</table></div>
     <p class="hint">Each cell shows the count, with the Sabotage points it produced underneath. Yellow marks the player with the most points in that row.</p>`;
+}
+
+// Rows for this week: injury designation, depth chart spot, and projection.
+function thisWeek(data) {
+  if (!data.some((d) => isCurrent(d.p))) return "";
+  const wk = injuries().week;
+  const proj = (id) => (PROJ && PROJ.week === wk ? (PROJ.players || []).find((x) => x.id === id) : null);
+  const row = (label, f) => `<tr class="nowrow"><th scope="row">${label}</th>${data.map((d) => `<td class="num">${isCurrent(d.p) ? f(d.p) : `<span class="dim">not active</span>`}</td>`).join("")}</tr>`;
+  const dc = (p) => {
+    const s = slotOf(p.id);
+    if (!s) return `<span class="dim">not listed</span>`;
+    const label = s.slot ? `${s.slot}, starting` : `${s.pos}${s.rank}, backup`;
+    return `<a href="depth.html?team=${encodeURIComponent(s.team)}">${esc(label)}</a>${s.in_for ? `<small>in for ${esc(s.in_for)}</small>` : ""}`;
+  };
+  const pj = (p) => { const x = proj(p.id); return x ? `${fmt(x.proj, 1)}<small>range ${fmt(x.lo)} to ${fmt(x.hi)}</small>` : `<span class="dim">none</span>`; };
+  return row(`Week ${wk} status`, (p) => injTag(p.id) || `<span class="dim">no designation</span>`)
+    + row("Depth chart", dc) + row(`Week ${wk} projection`, pj);
 }
 
 // ---------- charts ----------
