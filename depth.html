@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Depth charts | Stars of Sabotage</title>
+<meta name="description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta name="theme-color" content="#15140f">
+<meta property="og:title" content="Depth charts | Stars of Sabotage">
+<meta property="og:description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta property="og:image" content="assets/og-image.jpg">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css?v=bf515f9239">
+</head>
+<body class="page-depth" data-dv="172abb8769f8f69c">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <a class="brand" href="./" aria-label="Stars of Sabotage home">
+    <picture><source srcset="assets/whoopsie-sm.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="" width="44" height="49"></picture>
+    <span class="wordmark">Stars of <em>Sabotage</em></span>
+  </a>
+  <nav aria-label="Main"><a href="./">Leaderboard</a><a href="compare.html">Compare</a><a href="defenses.html">Defenses</a><a href="video.html">Video</a><a href="matchups.html">Matchups</a><a href="depth.html" aria-current="page">Depth Charts</a><a href="super-stars.html">Super Stars</a><a href="method.html">Scoring</a></nav>
+  <div class="hsearch" data-search role="search">
+    <label class="sr-only" for="q-head">Search players and teams</label>
+    <input id="q-head" type="search" placeholder="Search players, teams" autocomplete="off" spellcheck="false"
+      role="combobox" aria-expanded="false" aria-controls="q-head-list" aria-autocomplete="list">
+    <ul id="q-head-list" role="listbox" class="results" hidden></ul>
+  </div>
+</header>
+<main id="main">
+
+<section class="phero">
+  <div>
+    <p class="eyebrow">Depth charts, <span id="d-week">this week</span></p>
+    <h1>Depth Charts</h1>
+    <p class="pmeta">Who starts at quarterback, running back, receiver, tight end and kicker, with today's injury designations. Anyone ruled out is crossed off and the next man up is marked as starting. The <a href="matchups.html">Matchups</a> page projects the same starters.</p>
+  </div>
+  <div class="ctl"><label for="d-team">Team</label><select id="d-team"></select></div>
+</section>
+<div id="d-body"><p class="loading">Loading&hellip;</p></div>
+<section aria-labelledby="d-changes-h">
+  <h2 id="d-changes-h">Changes in the last week</h2>
+  <p class="hint">Moves among the starters compared with the chart from seven days earlier, plus anyone starting in place of an injured teammate.</p>
+  <div id="d-changes"></div>
+</section>
+<p class="hint">Depth charts and injury reports from <a href="https://github.com/nflverse">nflverse</a>, refreshed through the day. Questionable, Doubtful and Out come from the team's final injury report of the week, usually posted two days before the game. Earlier in the week a player can show Did not practice or Limited practice. IR, PUP, NFI (non-football injury) and Suspended come from the league's roster lists. A designation from last week is labeled with its week until the new report is out. Doubtful players are counted as not playing.</p>
+
+</main>
+<footer class="site-foot">
+  <p id="foot-status" class="foot-status"></p>
+  <p>Data: <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Scores are computed by Stars of Sabotage and are not official.</p>
+  <p>Not affiliated with or endorsed by the NFL, any NFL team, Yahoo, ESPN, CBS Sports, or Sleeper.</p>
+</footer>
+<script type="module" src="assets/common.js?v=dd86e435db"></script>
+<script type="module" src="assets/depth.js?v=a0ed91de12"></script>
+</body>
+</html>

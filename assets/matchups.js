@@ -1,5 +1,6 @@
 import { $, esc, NICK } from "./common.js?v=dd86e435db";
 import { loadMeta, fillFooter } from "./foot.js?v=949d944f7b";
+import { loadInjuries, loadDepth, injTag, slotOf } from "./avail.js?v=7a394d9948";
 
 // The coming week: every game with its kickoff, roof and forecast, and projected
 // Sabotage points by position. Projections are "if he plays" and come with a range.
@@ -33,7 +34,9 @@ async function init() {
   let meta = null;
   try {
     meta = await loadMeta();
-    data = await fetch(`data/projections.json?v=${meta.data_hash}-${Math.floor(Date.now() / 300000)}`).then((r) => (r.ok ? r.json() : null));
+    [data] = await Promise.all([
+      fetch(`data/projections.json?v=${meta.data_hash}-${Math.floor(Date.now() / 300000)}`).then((r) => (r.ok ? r.json() : null)),
+      loadInjuries(), loadDepth()]);
   } catch (e) { data = null; }
   if (meta) fillFooter(meta);
   if (!data || !data.players) {
@@ -57,12 +60,18 @@ function top() {
       <td class="dim">Expected to allow about ${fmt(d.pa_mean, 0)} points</td></tr>`);
   } else {
     rows = data.players.filter((p) => posOf(p) === pos).slice(0, 10).map((p, i) => `<tr><td class="num dim">${i + 1}</td>
-      <td><a class="plink" href="player.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a> <span class="dim">${esc(p.team)} ${p.home ? "vs" : "at"} ${esc(p.opp)}</span></td>
+      <td><a class="plink" href="player.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a> <span class="dim">${esc(p.team)} ${p.home ? "vs" : "at"} ${esc(p.opp)}</span>${infor(p)}${injTag(p.id, { block: true })}</td>
       <td class="num total">${fmt(p.proj)}</td><td class="num dim">${fmt(p.lo, 0)} to ${fmt(p.hi, 0)}</td>
       <td class="dim">${esc(why(p))}</td></tr>`);
   }
   $("#m-top").innerHTML = `<div class="table-wrap plain"><table><tr><th class="num">#</th><th>${pos === "DEF" ? "Defense" : "Player"}</th>
     <th class="num">Projection</th><th class="num">Likely range</th><th>Why</th></tr>${rows.join("")}</table></div>`;
+}
+
+// A backup moved up because a starter is unavailable.
+function infor(p) {
+  const s = slotOf(p.id);
+  return s && s.in_for ? ` <span class="infor">in for ${esc(s.in_for)}</span>` : "";
 }
 
 function why(p) {
@@ -77,7 +86,7 @@ function games() {
   const byGame = new Map();
   for (const p of data.players) { if (!byGame.has(p.game_id)) byGame.set(p.game_id, []); byGame.get(p.game_id).push(p); }
   const defs = new Map(data.defenses.map((d) => [`${d.game_id}-${d.team}`, d]));
-  const line = (p) => `<li><span class="slot">${esc(p.slot || p.pos)}</span><a class="plink" href="player.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a><b>${fmt(p.proj)}</b></li>`;
+  const line = (p) => `<li><span class="slot">${esc(p.slot || p.pos)}</span><span><a class="plink" href="player.html?id=${encodeURIComponent(p.id)}">${esc(p.name)}</a>${infor(p)}${injTag(p.id, { block: true })}</span><b>${fmt(p.proj)}</b></li>`;
   const side = (g, team) => {
     const ps = (byGame.get(g.game_id) || []).filter((p) => p.team === team)
       .sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
@@ -89,7 +98,7 @@ function games() {
     const qbs = (byGame.get(g.game_id) || []).filter((p) => p.slot === "QB" || (!p.slot && p.pos === "QB"));
     const qbFor = (team) => qbs.find((p) => p.team === team);
     const dh = defs.get(`${g.game_id}-${g.home}`), da = defs.get(`${g.game_id}-${g.away}`);
-    const row = (team, d) => { const q = qbFor(team); return `<li><span class="slot">${esc(team)}</span>${q ? `<span>${esc(q.name)} <b class="qb">${fmt(q.proj)}</b></span>` : "<span></span>"}<span class="dim">D ${d ? fmt(d.proj) : ""}</span></li>`; };
+    const row = (team, d) => { const q = qbFor(team); return `<li><span class="slot">${esc(team)}</span>${q ? `<span>${esc(q.name)} <b class="qb">${fmt(q.proj)}</b>${injTag(q.id)}</span>` : "<span></span>"}<span class="dim">D ${d ? fmt(d.proj) : ""}</span></li>`; };
     return `<details class="gcard"><summary>
       <h3>${esc(NICK[g.away] || g.away)} <span class="dim">at</span> ${esc(NICK[g.home] || g.home)}</h3>
       <p class="gmeta">${kickoff(g)} · ${esc(g.stadium || "")}</p>
@@ -97,7 +106,8 @@ function games() {
       ${g.home_implied !== null && g.away_implied !== null ? `<p class="gmeta">Expected score from the spread and total: ${esc(g.away)} ${fmt(g.away_implied)}, ${esc(g.home)} ${fmt(g.home_implied)}</p>` : ""}
       <ol class="gqb">${row(g.away, da)}${row(g.home, dh)}</ol>
       <p class="gmore">All starters</p></summary>
-      <div class="gfull">${side(g, g.away)}${side(g, g.home)}</div></details>`;
+      <div class="gfull">${side(g, g.away)}${side(g, g.home)}</div>
+      <p class="gmore"><a href="depth.html?team=${g.away}">${esc(NICK[g.away] || g.away)} depth chart</a> · <a href="depth.html?team=${g.home}">${esc(NICK[g.home] || g.home)} depth chart</a></p></details>`;
   }).join("");
 }
 

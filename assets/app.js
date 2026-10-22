@@ -1,4 +1,5 @@
 import { loadMeta, fillFooter, fmtET, STATUS_TEXT } from "./foot.js?v=949d944f7b";
+import { loadInjuries, injTag } from "./avail.js?v=7a394d9948";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -56,6 +57,8 @@ const DEFAULTS = { season: null, from: null, to: null, rows: "career", pos: "ALL
 const state = { ...DEFAULTS };
 const DATA = { meta: null, seasons: [], weekly: new Map(), careerRows: null, seasonRows: null };
 const isAll = () => state.season === "all";
+// Injury tags describe today, so they show only on the current season's table.
+const showInj = () => !isAll() && DATA.meta && state.season === DATA.meta.season;
 const seasonInfo = (s) => DATA.seasons.find((x) => x.season === s);
 
 // ---------- load ----------
@@ -101,6 +104,8 @@ async function init() {
   initTray();
   readURL();
   await go();
+  // Injury tags arrive after the table; redraw once if this season is on screen.
+  loadInjuries().then(() => { if (showInj()) render(); });
   window.addEventListener("popstate", async () => { readURL(); await go(null); });
 }
 function fail() {
@@ -480,7 +485,7 @@ function render() {
       const v = value(r, c);
       const cls = [c.cls || "", c.num ? "num" : "", v === null ? "blank" : v === 0 ? "zero" : ""].join(" ").trim();
       if (c.key === "name") return `<td class="${cls}"><a class="plink" href="${esc(rowLink(r))}">${esc(r.name)}</a>${r.isDef ? "" :
-        `<button type="button" class="cadd" data-cmp="${esc(r.pid)}" data-name="${esc(r.name)}" aria-pressed="${tray.has(r.pid)}" title="Add to compare" aria-label="Compare ${esc(r.name)}">+</button>`}</td>`;
+        `<button type="button" class="cadd" data-cmp="${esc(r.pid)}" data-name="${esc(r.name)}" aria-pressed="${tray.has(r.pid)}" title="Add to compare" aria-label="Compare ${esc(r.name)}">+</button>`}${!r.isDef && showInj() ? injTag(r.pid, { block: true }) : ""}</td>`;
       return `<td class="${cls}">${fmt(v, c)}</td>`;
     }).join("")}</tr>`).join("");
   }
