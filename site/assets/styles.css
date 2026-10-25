@@ -551,3 +551,16 @@ td.dimcol { color: var(--muted); }
   #board .inj-short { display: inline; }
   #board td.player { max-width: 160px; }
 }
+/* projected vs actual (Matchups) */
+.ctl > .lbl { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.resctl { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; margin: 6px 0 8px; }
+.ressum { margin: 6px 0 10px; }
+.ressum span { display: inline-block; margin: 0 14px 4px 0; }
+td.offby.up { color: var(--yellow); }
+td.offby.down { color: var(--rust-ink); }
+td .inrange { color: var(--muted); font-size: 11px; margin-left: 4px; }
+.glist .act, .gqb .act { font: 400 15px/1 var(--mono); color: var(--ink); margin-left: 6px; }
+.glist .act small, .gqb .act small { color: var(--muted); font-size: 11px; margin-left: 2px; }
+.gscore { font: 400 20px/1 var(--display); color: var(--yellow); margin-left: 8px; }
+td.num.up { color: var(--yellow); }
+td.num.down { color: var(--rust-ink); }

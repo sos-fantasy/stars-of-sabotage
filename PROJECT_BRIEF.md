@@ -606,3 +606,13 @@ Phase 3 exit check: passed. NFL Rush posted "NFL WORST Plays Of Week 6!" (VYkrrV
 Giants QB: nflverse depth charts refreshed at 2:02 AM ET October 22; J.J. McCarthy is QB1 on Depth Charts and the Matchups starter (38.9 projected).
 
 Watch item: GitHub starts our hourly runs 30 to 45 minutes after the :07 cron time. The schedule checks the Eastern hour when the run starts, so a delay past 53 minutes would skip that slot. None skipped so far.
+
+## 36. Projected vs actual (owner, October 25, 2026)
+
+Projections stay on the site after kickoff and are compared with what each player scored.
+- Source: the projection log (`data/projection-log/{season}-wNN.json`) already froze each player's last projection before his game kicked off. It now also freezes each game card (stadium, forecast, expected score) and flags a player who dropped off the starters before kickoff (`removed`: ruled out or moved down the depth chart) instead of leaving his old projection to count as a miss.
+- `pipeline/results.py` writes `data/results/{season}-wNN.json` per week (every projected player and defense with projected, likely range, actual, off by = actual minus projected, inside the range or not, and a status: final, did not play, dropped before kickoff, game not over, stats coming) and `data/results-{season}.json` (week summaries and each player's projection by week).
+- Matchups: a "Projected vs actual" section with a week picker (defaults to the latest week with a final game), position tabs, and sorting by projection, biggest misses or actual. "Every game" now keeps games after kickoff, with the final score and each starter's actual and miss next to his projection.
+- Player pages: Proj and +/- columns in the game log for this season.
+- Check: week-by-week averages match the Room for Improvement page, computed separately (week 6: QB 16.5, 90.6% inside the range). Patriots at Bears, October 22, matched the RotoWire box score for incompletions, interceptions, carries and catches (Maye 24 of 31, 1 INT, 4 carries; Williams 22 of 33, 0 INT, 5 carries; Swift 22 carries, 4 catches); sacks not shown there.
+- Live actuals during a game are not available: nflverse posts player stats after games end.

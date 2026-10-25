@@ -187,14 +187,27 @@ const venue = (r) => {
   return r.wind === null || r.wind === undefined ? "Outdoors" : `Outdoors, ${r.wind} mph`;
 };
 
+// Pre-kickoff projections for this player by week (data/results-{season}.json).
+let PROJ = null;
+async function loadProj() {
+  if (!meta || !P || P.last !== meta.season) return;
+  try {
+    const d = await getJSON(`data/results-${meta.season}.json?v=${meta.data_hash}-${Math.floor(Date.now() / 300000)}`);
+    const mine = d.players && d.players[P.id];
+    if (mine) { PROJ = { season: d.season, weeks: mine }; render(); }
+  } catch (e) { /* no results file yet */ }
+}
+
 function gameLog(wk, keys) {
   const cols = keys.map((k) => STAT[k]);
+  const pj = (r) => (PROJ && r.season === PROJ.season ? PROJ.weeks[String(r.week)] : null);
+  const hasProj = wk.some((r) => pj(r));
   // Targets are not scored, but show how often the team throws his way.
   const tgt = wk.some((r) => r.n_targets) && !keys.every((k) => k === "fgx" || k === "patx");
-  const head = `<tr><th>Wk</th><th>Opp</th><th>Venue</th>${cols.map((c) => `<th class="num" title="${esc(c.label)}">${esc(short(c.label))}</th>`).join("")}${tgt ? `<th class="num dim" title="Targets (not scored)">Tgt</th>` : ""}<th class="num total">Pts</th></tr>`;
+  const head = `<tr><th>Wk</th><th>Opp</th><th>Venue</th>${cols.map((c) => `<th class="num" title="${esc(c.label)}">${esc(short(c.label))}</th>`).join("")}${tgt ? `<th class="num dim" title="Targets (not scored)">Tgt</th>` : ""}<th class="num total">Pts</th>${hasProj ? `<th class="num" title="Projection made before kickoff">Proj</th><th class="num" title="Actual minus projected">+/-</th>` : ""}</tr>`;
   const body = wk.slice().sort((a, b) => a.week - b.week).map((r) =>
     `<tr><td>${r.week}</td><td>${r.home === 0 ? "@" : "vs"} ${esc(r.opponent_team)}</td><td class="dim">${esc(venue(r))}</td>
-     ${cols.map((c) => `<td class="num${r[c.n] ? "" : " zero"}">${r[c.n]}</td>`).join("")}${tgt ? `<td class="num dim">${r.n_targets ?? ""}</td>` : ""}<td class="num total">${r.sabotage_pts}</td></tr>`).join("");
+     ${cols.map((c) => `<td class="num${r[c.n] ? "" : " zero"}">${r[c.n]}</td>`).join("")}${tgt ? `<td class="num dim">${r.n_targets ?? ""}</td>` : ""}<td class="num total">${r.sabotage_pts}</td>${hasProj ? projCells(pj(r), r.sabotage_pts) : ""}</tr>`).join("");
   return `<div class="table-wrap plain"><table>${head}${body}</table></div>`;
 }
 function seasonTable() {
@@ -248,10 +261,18 @@ async function nextGame() {
   projection();
 }
 
+function projCells(x, actual) {
+  if (!x) return `<td class="num dim"></td><td class="num dim"></td>`;
+  const [proj, lo, hi] = x, miss = actual - proj;
+  return `<td class="num dim" title="Likely range ${fmt(lo)} to ${fmt(hi)}">${fmt(proj, 1)}</td>
+    <td class="num ${miss > 0 ? "up" : miss < 0 ? "down" : ""}">${miss > 0 ? "+" : ""}${fmt(miss, 1)}</td>`;
+}
+
 // This week's projection, if the player is on the Matchups list.
 const COMP = { n_incomplete: "incompletions", n_sacks: "sacks", n_carries: "carries", n_receptions: "catches",
   n_fumbles: "fumbles", n_fumbles_lost: "fumbles lost", n_ints: "interceptions", n_pick_sixes: "pick sixes" };
 async function projection() {
+  loadProj();
   try {
     const d = await getJSON(`data/projections.json?v=${meta.data_hash}-${Math.floor(Date.now() / 300000)}`);
     const p = (d.players || []).find((x) => x.id === P.id);

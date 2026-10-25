@@ -277,6 +277,14 @@ MATCHUPS_BODY = """
   <div class="segbtns mtabs" id="m-tabs" role="group" aria-label="Position"></div>
   <div id="m-top"><p class="loading">Loading&hellip;</p></div>
 </section>
+<section aria-labelledby="m-res-h">
+  <h2 id="m-res-h">Projected vs actual</h2>
+  <p class="hint">Each player's last projection before his game kicked off, kept after the game so it can be checked against what he scored. Results fill in once the game is over and nflverse posts the stats, usually within a few hours.</p>
+  <div class="resctl"><div class="ctl"><label for="m-res-week">Week</label><select id="m-res-week"></select></div>
+    <div class="ctl"><span class="lbl">Sort</span><div class="segbtns" id="m-res-sort" role="group" aria-label="Sort"></div></div></div>
+  <div class="segbtns mtabs" id="m-res-tabs" role="group" aria-label="Position"></div>
+  <div id="m-res"><p class="loading">Loading&hellip;</p></div>
+</section>
 <section aria-labelledby="m-games-h">
   <h2 id="m-games-h">Every game</h2>
   <div class="ggrid" id="m-games"></div>

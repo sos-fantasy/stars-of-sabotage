@@ -82,10 +82,25 @@ def update_log(log: dict, proj: dict, now) -> dict:
     log.setdefault("week", proj["week"])
     log.setdefault("source", "live")
     players, defs = log.setdefault("players", {}), log.setdefault("defenses", {})
+    # Game cards (stadium, forecast, expected score) frozen at kickoff too, so the
+    # Matchups page can keep every game of the week on screen after it starts.
+    games = log.setdefault("games", {})
+    for g in proj.get("games", []):
+        k = kick.get(g["game_id"])
+        if k is None or k > now:
+            games[g["game_id"]] = g
     for p in proj.get("players", []):
         k = kick.get(p.get("game_id"))
         if k is None or k > now:
             players[p["id"]] = {**p, "forecast_wind": wind.get(p.get("game_id"))}
+    # A player projected earlier in the week who has since dropped off the starters
+    # (ruled out, moved down the depth chart) keeps his old projection here, flagged,
+    # so the results page can say so instead of counting it as a miss.
+    current = {p["id"] for p in proj.get("players", [])}
+    for pid, p in players.items():
+        k = kick.get(p.get("game_id"))
+        if k is not None and k > now:
+            p["removed"] = pid not in current
     for d in proj.get("defenses", []):
         k = kick.get(d.get("game_id"))
         if k is None or k > now:

@@ -31,6 +31,7 @@ import site_build  # noqa: E402
 import videos  # noqa: E402
 import projections  # noqa: E402
 import review  # noqa: E402
+import results  # noqa: E402
 import weather  # noqa: E402
 
 SEASON = int(os.environ.get("SOS_SEASON", "2026"))
@@ -250,6 +251,19 @@ def main(argv=None) -> int:
         print(f"[review] skipped: {e}")
         if prev_data and (prev_data / "improvements.json").exists():
             shutil.copy2(prev_data / "improvements.json", data_out / "improvements.json")
+        if prev_data and (prev_data / "projection-log").exists():   # never lose the frozen projections
+            shutil.copytree(prev_data / "projection-log", data_out / "projection-log", dirs_exist_ok=True)
+
+    # Projected vs actual for every logged week (Matchups results, player pages).
+    try:
+        res = results.build(data_out, SEASON)
+        if res:
+            _write(data_out / f"results-{SEASON}.json", res)
+    except Exception as e:
+        print(f"[results] skipped: {e}")
+        if prev_data and (prev_data / f"results-{SEASON}.json").exists():
+            shutil.copy2(prev_data / f"results-{SEASON}.json", data_out / f"results-{SEASON}.json")
+            shutil.copytree(prev_data / "results", data_out / "results", dirs_exist_ok=True)
 
     # Stadium coordinates checked against Open-Meteo's geocoder whenever the table changes.
     import hashlib
