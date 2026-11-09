@@ -66,7 +66,7 @@ def add_snap_share(m: pl.DataFrame, snaps: pl.DataFrame | None) -> pl.DataFrame:
 
 def load_snaps(seasons) -> pl.DataFrame:
     """nflverse snap counts (2013 on) keyed by GSIS player id."""
-    import nflreadpy as nfl
+    import nflsafe as nfl
     ids = nfl.load_players().select("gsis_id", "pfr_id").drop_nulls()
     s = nfl.load_snap_counts([x for x in seasons if x >= 2013]).filter(pl.col("game_type") == "REG")
     return s.join(ids, left_on="pfr_player_id", right_on="pfr_id").select(
@@ -267,7 +267,7 @@ def target_week(sched_season: pl.DataFrame, now) -> tuple[int | None, pl.DataFra
 def build(data_out, season: int, now, cfg: dict, log=print) -> dict | None:
     import json
     from pathlib import Path
-    import nflreadpy as nfl
+    import nflsafe as nfl
     import weather as Wx
     data_out = Path(data_out)
     seasons = list(range(season - TRAIN_YEARS - 1, season + 1))

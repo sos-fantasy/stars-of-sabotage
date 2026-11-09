@@ -54,7 +54,7 @@ def load(season: int, data_dir: Path | None):
     if data_dir and (data_dir / f"pbp_{season}.parquet").exists():
         r = lambda n, **kw: pl.read_parquet(data_dir / f"{n}_{season}.parquet", **kw)
         return r("player_stats"), r("pbp", columns=PBP_COLS), r("schedules")
-    import nflreadpy as nfl
+    import nflsafe as nfl
     pbp = nfl.load_pbp(season).select(PBP_COLS)
     return nfl.load_player_stats(season), pbp, nfl.load_schedules(season)
 
@@ -106,9 +106,7 @@ def main(argv=None) -> int:
     now_et = now.astimezone(schedule.ET)
 
     if not (a.force or a.backfill or a.seasons):
-        import nflreadpy as nfl
-        sched = nfl.load_schedules(SEASON)
-        game_dates = {datetime.fromisoformat(d).date() for d in sched["gameday"].to_list()}
+        game_dates = gate_game_dates(SEASON, Path(a.prev) / "data" if a.prev else None)
         due, why = schedule.is_due(now_et, game_dates)
         print(f"[schedule] {now_et:%a %Y-%m-%d %H:%M} ET: {why}")
         if not due:
@@ -294,6 +292,29 @@ def main(argv=None) -> int:
           f"data {'unchanged' if updated_at == prev_meta.get('updated_at') else 'changed'} ({h})")
     _set_output("ran", "true")
     return 0
+
+
+def gate_game_dates(season: int, prev_data: Path | None, loader=None) -> set:
+    """Game dates for the hourly "is work due?" check.
+
+    Tries nflverse (with retries). If that still fails, reads the dates from
+    the games file the last good run published to the deploy branch, so an
+    nflverse or GitHub outage cannot stop the check itself. That copy lists
+    regular-season games only; if it is missing too, the error is raised.
+    """
+    if loader is None:
+        import nflsafe as nfl
+        loader = nfl.load_schedules
+    try:
+        sched = loader(season)
+        return {datetime.fromisoformat(d).date() for d in sched["gameday"].to_list()}
+    except OSError as e:
+        rows = export_rows(_read_json(prev_data / f"games-{season}.json")) if prev_data else []
+        if not rows:
+            raise
+        print(f"[schedule] nflverse schedule unavailable ({e}); using games-{season}.json "
+              f"from the deploy branch ({len(rows)} games)", flush=True)
+        return {datetime.fromisoformat(r["gameday"]).date() for r in rows}
 
 
 def export_rows(compact_obj) -> list[dict]:

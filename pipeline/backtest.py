@@ -32,7 +32,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     lo, hi = (int(x) for x in a.seasons.split("-"))
     test = list(range(lo, hi + 1))
-    import nflreadpy as nfl
+    import nflsafe as nfl
     cfg = S.load_config()
     first = lo - PR.TRAIN_YEARS - 1
     sched = nfl.load_schedules(list(range(first, hi + 1)))

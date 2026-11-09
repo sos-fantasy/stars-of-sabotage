@@ -471,7 +471,7 @@ def run(data_out: Path, prev_data: Path | None, season: int, now, cfg: dict, wee
         log=print) -> dict:
     import shutil
     from functools import lru_cache
-    import nflreadpy as nfl
+    import nflsafe as nfl
     data_out = Path(data_out)
     logdir = data_out / "projection-log"
     logdir.mkdir(exist_ok=True)

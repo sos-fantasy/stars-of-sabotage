@@ -265,7 +265,7 @@ def add_usage(depth: dict, scores: pl.DataFrame, snaps: pl.DataFrame | None, sea
 
 def build(season: int, week: int, now: datetime, log=print) -> tuple[dict | None, dict | None, set[str]]:
     """Returns (injuries.json, depth.json, unavailable ids). Each part fails on its own."""
-    import nflreadpy as nfl
+    import nflsafe as nfl
     tags, out_ids, injuries, depth = {}, set(), None, None
     try:
         inj = nfl.load_injuries(season)
