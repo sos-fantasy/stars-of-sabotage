@@ -616,3 +616,17 @@ Projections stay on the site after kickoff and are compared with what each playe
 - Player pages: Proj and +/- columns in the game log for this season.
 - Check: week-by-week averages match the Room for Improvement page, computed separately (week 6: QB 16.5, 90.6% inside the range). Patriots at Bears, October 22, matched the RotoWire box score for incompletions, interceptions, carries and catches (Maye 24 of 31, 1 INT, 4 carries; Williams 22 of 33, 0 INT, 5 carries; Swift 22 carries, 4 catches); sacks not shown there.
 - Live actuals during a game are not available: nflverse posts player stats after games end.
+
+## 37. Download retries and gate fallback (November 9, 2026)
+
+Incident: runs #561 to #563 (3:52, 4:47 and 5:43 AM ET, Sunday November 8) failed at `pipeline/run.py:110`, the hourly gate's `load_schedules` call. GitHub returned 504 Gateway Time-out twice and a 30-second read timeout on `nflverse-data/releases/download/schedules/games.parquet`. Replayed through `schedule.is_due`, none of the three hours had work due; the 6:40 AM daily refresh ran normally. No data was missed.
+
+Fix (commit e14aadb, owner chose option 3):
+- `pipeline/nflsafe.py` wraps every nflreadpy `load_*` function: 3 tries on network errors (OSError, which covers ConnectionError and timeouts), waits of 15 and 45 seconds. Other errors still fail on the first try. All pipeline modules use `import nflsafe as nfl`.
+- `run.gate_game_dates`: if the schedule download still fails, the gate reads game dates from `deploy/data/games-2026.json` (regular season only) and logs that it did. With no copy, it raises as before.
+- `tests/test_resilience.py`: 8 tests, including the three November 8 run times (not due) and the Sunday 7 PM game-day slot (due) on fallback dates. Suite: 114 passed.
+- Workflow: `actions/checkout@v4` to v5 and `actions/setup-python@v5` to v6. Both release notes state Node 24 (checked November 9, 2026). checkout v6 and v7 and setup-python v7 exist; checkout v6 moved stored credentials, which our `git push origin deploy` uses, so that step is left for a separate test.
+
+Verified: push run 42681731055 succeeded on November 9 with no Node 20 warning.
+
+Not covered: a long outage during a due slot still skips the scoring build, since scores need fresh nflverse data. The site keeps serving the last good files and GitHub emails the failure.
