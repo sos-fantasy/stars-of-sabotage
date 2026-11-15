@@ -168,12 +168,34 @@ def check_facebook():
     print("Facebook check passed.")
 
 
+def publish_facebook(image_url, caption):
+    """Publish one photo post to the Facebook Page with the system user token."""
+    token = os.environ.get("META_SYSTEM_TOKEN", "").strip()
+    page = os.environ.get("FB_PAGE_ID", "").strip()
+    if not token or not page:
+        sys.exit("META_SYSTEM_TOKEN and FB_PAGE_ID must both be set.")
+    base = f"https://graph.facebook.com/{GRAPH_VERSION}"
+    status, body = _call("GET", f"{base}/{page}", {"fields": "access_token", "access_token": token})
+    page_token = body.get("access_token") if isinstance(body, dict) else None
+    if not page_token:
+        sys.exit(f"FAIL getting Page token: HTTP {status} {json.dumps(_redact(body, token))}")
+    status, body = _call("POST", f"{base}/{page}/photos",
+                         {"url": image_url, "message": caption, "published": "true", "access_token": page_token})
+    if status != 200 or not body.get("id"):
+        sys.exit(f"FAIL posting: HTTP {status} {json.dumps(_redact(_redact(body, token), page_token))}")
+    post_id = body.get("post_id") or body["id"]
+    print("Published:", post_id, f"https://www.facebook.com/{post_id}")
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "check":
         check(sys.argv[2] if len(sys.argv) > 2 else None)
     elif cmd == "check-facebook":
         check_facebook()
+    elif cmd == "publish-facebook" and len(sys.argv) == 4:
+        with open(sys.argv[3], encoding="utf-8") as f:
+            publish_facebook(sys.argv[2], f.read().strip())
     elif cmd == "publish-instagram" and len(sys.argv) == 4:
         with open(sys.argv[3], encoding="utf-8") as f:
             publish_instagram(sys.argv[2], f.read().strip())

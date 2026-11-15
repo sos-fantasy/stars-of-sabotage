@@ -8,7 +8,7 @@ on:
       action:
         description: "What to do"
         type: choice
-        options: [check, check-facebook, publish-instagram]
+        options: [check, check-facebook, publish-instagram, publish-facebook]
         default: check
       image_url:
         description: "Public JPEG URL"
@@ -39,11 +39,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check Facebook Page access
-        if: inputs.action == 'check-facebook'
+        if: inputs.action == 'check-facebook' || inputs.action == 'publish-facebook'
         run: python pipeline/social/meta.py check-facebook
       - name: Check token and image
-        if: inputs.action != 'check-facebook'
+        if: inputs.action == 'check' || inputs.action == 'publish-instagram'
         run: python pipeline/social/meta.py check "${{ inputs.image_url }}"
       - name: Publish to Instagram
         if: inputs.action == 'publish-instagram'
         run: python pipeline/social/meta.py publish-instagram "${{ inputs.image_url }}" "${{ inputs.caption_file }}"
+      - name: Publish to Facebook
+        if: inputs.action == 'publish-facebook'
+        run: python pipeline/social/meta.py publish-facebook "${{ inputs.image_url }}" "${{ inputs.caption_file }}"
