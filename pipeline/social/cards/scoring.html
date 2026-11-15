@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How Sabotage Scores</title>
+<!-- Social card, 1080 x 1350. Rendered to JPEG by pipeline/social/render.py.
+     Point values must match config/scoring.yml. -->
+<style>
+@font-face { font-family: Anton; src: url("../../../site/assets/fonts/anton-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; src: url("../../../site/assets/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 700; src: url("../../../site/assets/fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2"); }
+:root { --ink: #15140f; --deep: #0d0c09; --cream: #ece6d8; --muted: #a39b8a; --yellow: #f2b705; --orange: #b8421f; --rule: #3a372d; --panel: #211f18; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.card { width: 1080px; height: 1350px; background: var(--ink); color: var(--cream); font-family: "JetBrains Mono", monospace; display: flex; flex-direction: column; overflow: hidden; }
+.bar { height: 18px; background: var(--orange); }
+.head { padding: 44px 72px 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+.eyebrow { font-size: 24px; letter-spacing: 6px; color: var(--yellow); font-weight: 700; }
+h1 { margin: 14px 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 118px; line-height: .92; text-transform: uppercase; }
+h1 span { color: var(--yellow); }
+.sub { font-size: 24px; color: var(--muted); }
+.mascot { width: 190px; height: 212px; flex-shrink: 0; }
+.cols { margin: 28px 72px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+.col { display: flex; flex-direction: column; gap: 30px; }
+.group h2 { margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 34px; text-transform: uppercase; color: var(--yellow); padding-bottom: 8px; border-bottom: 3px solid var(--yellow); }
+.label { font-size: 18px; color: var(--muted); padding: 10px 0 4px; letter-spacing: 2px; }
+.row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 2px solid var(--rule); font-size: 23px; }
+.row b { font-weight: 700; }
+.notes { background: var(--panel); border-top: 6px solid var(--orange); padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; font-size: 20px; line-height: 1.45; }
+.grow { flex: 1; }
+.foot { background: var(--deep); border-top: 6px solid var(--orange); padding: 18px 72px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
+.brand { display: flex; align-items: center; gap: 16px; }
+.brand img { width: 58px; height: 65px; }
+.word { font-family: Anton, Impact, sans-serif; font-size: 34px; line-height: 1; text-transform: uppercase; }
+.word span { color: var(--yellow); }
+.url { font-size: 16px; letter-spacing: 3px; color: var(--muted); margin-top: 4px; }
+.legal { text-align: right; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="bar"></div>
+  <div class="head">
+    <div>
+      <div class="eyebrow">THE RULES</div>
+      <h1>How Sabotage<br><span>Scores</span></h1>
+      <div class="sub">Bad plays score. Highest total wins.</div>
+    </div>
+    <img class="mascot" src="../../../site/assets/whoopsie.webp" alt="">
+  </div>
+  <div class="cols">
+    <div class="col">
+      <div class="group">
+        <h2>Offense</h2>
+        <div class="row"><span>Incomplete pass</span><b>2</b></div>
+        <div class="row"><span>Sack taken</span><b>5</b></div>
+        <div class="row"><span>Rushing attempt</span><b>1</b></div>
+        <div class="row"><span>Reception</span><b>2</b></div>
+        <div class="row"><span>Fumble</span><b>7</b></div>
+        <div class="row"><span>Fumble lost</span><b>+10</b></div>
+        <div class="row"><span>Interception</span><b>10</b></div>
+        <div class="row"><span>Pick six</span><b>+21</b></div>
+      </div>
+      <div class="group">
+        <h2>Kicker</h2>
+        <div class="row"><span>FG missed 0-19 yds</span><b>21</b></div>
+        <div class="row"><span>FG missed 20-29</span><b>18</b></div>
+        <div class="row"><span>FG missed 30-39</span><b>16</b></div>
+        <div class="row"><span>FG missed 40-49</span><b>14</b></div>
+        <div class="row"><span>FG missed 50+</span><b>12</b></div>
+        <div class="row"><span>PAT missed</span><b>16</b></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="group">
+        <h2>Defense</h2>
+        <div class="label">POINTS ALLOWED</div>
+        <div class="row"><span>0 (shutout)</span><b>0</b></div>
+        <div class="row"><span>1 to 6</span><b>7</b></div>
+        <div class="row"><span>7 to 13</span><b>14</b></div>
+        <div class="row"><span>14 to 20</span><b>21</b></div>
+        <div class="row"><span>21 to 27</span><b>28</b></div>
+        <div class="row"><span>28 to 34</span><b>35</b></div>
+        <div class="row"><span>35 or more</span><b>42</b></div>
+      </div>
+      <div class="notes">
+        <span>Points stack. A lost fumble is 7 + 10 = 17. A pick six is 10 + 21 = 31.</span>
+        <span>Blocked kicks count as misses.</span>
+        <span>Points allowed leaves out return TDs on scrimmage plays, safeties and defensive two-point returns.</span>
+      </div>
+    </div>
+  </div>
+  <div class="grow"></div>
+  <div class="foot">
+    <div class="brand">
+      <img src="../../../site/assets/whoopsie.webp" alt="">
+      <div><div class="word">Stars of <span>Sabotage</span></div><div class="url">STARSOFSABOTAGE.COM/METHOD.HTML</div></div>
+    </div>
+    <div class="legal">Data: nflverse, CC BY 4.0<br>Not affiliated with the NFL</div>
+  </div>
+</div>
+</body>
+</html>

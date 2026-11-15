@@ -1,0 +1,43 @@
+name: Social posts
+
+# Started by hand for now (Actions tab > Social posts > Run workflow).
+# "check" posts nothing. "publish-instagram" posts one image to @starsofsabotage.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        options: [check, publish-instagram]
+        default: check
+      image_url:
+        description: "Public JPEG URL"
+        default: "https://starsofsabotage.com/assets/social/how-sabotage-scores.jpg"
+      caption_file:
+        description: "Caption file in the repo"
+        default: "pipeline/social/captions/how-sabotage-scores.txt"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: social-posts
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      IG_USER_ID: ${{ vars.IG_USER_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Check token and image
+        run: python pipeline/social/meta.py check "${{ inputs.image_url }}"
+      - name: Publish to Instagram
+        if: inputs.action == 'publish-instagram'
+        run: python pipeline/social/meta.py publish-instagram "${{ inputs.image_url }}" "${{ inputs.caption_file }}"
