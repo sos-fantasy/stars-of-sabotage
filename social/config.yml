@@ -1,0 +1,12 @@
+# Social posting switches. Owner decisions, November 15, 2026.
+#
+# mode per card type:
+#   off      never builds
+#   dry-run  builds the card and captions into social/outbox/<id>/ for review; posts nothing
+#   live     builds, hosts the JPEG on starsofsabotage.com, then posts
+# Flip a type to live only after its dry runs look right.
+mode:
+  game: dry-run
+  wreckage: dry-run
+
+platforms: [instagram, facebook]

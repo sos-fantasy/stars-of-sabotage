@@ -140,6 +140,7 @@ def publish_instagram(image_url, caption):
     status, body = _call("GET", f"{host}/{GRAPH_VERSION}/{media}",
                          {"fields": "permalink", "access_token": token})
     print("Published:", media, body.get("permalink", ""))
+    return {"id": media, "url": body.get("permalink", "")}
 
 
 def check_facebook():
@@ -185,6 +186,7 @@ def publish_facebook(image_url, caption):
         sys.exit(f"FAIL posting: HTTP {status} {json.dumps(_redact(_redact(body, token), page_token))}")
     post_id = body.get("post_id") or body["id"]
     print("Published:", post_id, f"https://www.facebook.com/{post_id}")
+    return {"id": post_id, "url": f"https://www.facebook.com/{post_id}"}
 
 
 if __name__ == "__main__":

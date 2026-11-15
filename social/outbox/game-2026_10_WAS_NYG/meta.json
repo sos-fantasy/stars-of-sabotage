@@ -1,0 +1,54 @@
+{
+ "id": "game-2026_10_WAS_NYG",
+ "type": "game",
+ "season": 2026,
+ "week": 10,
+ "status": "in_progress",
+ "mode": "dry-run",
+ "trim": 0,
+ "built": "2026-11-15T23:16:40+00:00",
+ "rows": [
+  {
+   "rank": "1",
+   "name": "Jayden Daniels",
+   "team": "WAS",
+   "pts": 56
+  },
+  {
+   "rank": "2",
+   "name": "J.J. McCarthy",
+   "team": "NYG",
+   "pts": 47
+  },
+  {
+   "rank": "T-3",
+   "name": "Commanders defense",
+   "team": "WAS",
+   "pts": 28
+  },
+  {
+   "rank": "T-3",
+   "name": "Giants defense",
+   "team": "NYG",
+   "pts": 28
+  },
+  {
+   "rank": "5",
+   "name": "Malik Nabers",
+   "team": "NYG",
+   "pts": 27
+  },
+  {
+   "rank": "6",
+   "name": "Isaiah Likely",
+   "team": "NYG",
+   "pts": 25
+  },
+  {
+   "rank": "7",
+   "name": "Cam Skattebo",
+   "team": "NYG",
+   "pts": 24
+  }
+ ]
+}
