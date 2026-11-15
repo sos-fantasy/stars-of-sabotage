@@ -31,6 +31,8 @@ jobs:
     env:
       IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
       IG_USER_ID: ${{ vars.IG_USER_ID }}
+      META_SYSTEM_TOKEN: ${{ secrets.META_SYSTEM_TOKEN }}
+      FB_PAGE_ID: ${{ vars.FB_PAGE_ID }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6

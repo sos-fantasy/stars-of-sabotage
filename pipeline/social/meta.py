@@ -143,18 +143,29 @@ def publish_instagram(image_url, caption):
 
 
 def check_facebook():
-    """Can the token see a Facebook Page? Posts nothing."""
-    token, _ = _env()
-    base = f"https://graph.facebook.com/{GRAPH_VERSION}"
-    for path, fields in [("me", "id,name"), ("me/accounts", "id,name,tasks")]:
-        status, body = _call("GET", f"{base}/{path}", {"fields": fields, "access_token": token})
-        if isinstance(body, dict) and isinstance(body.get("data"), list):
-            body = {"data": [{k: v for k, v in pg.items() if k != "access_token"} if isinstance(pg, dict) else pg for pg in body["data"]]}
-        print(f"{path}: HTTP {status} {json.dumps(_redact(body, token))}")
+    """Can META_SYSTEM_TOKEN reach the Facebook Page? Posts nothing."""
+    token = os.environ.get("META_SYSTEM_TOKEN", "").strip()
     page = os.environ.get("FB_PAGE_ID", "").strip()
-    if page:
-        status, body = _call("GET", f"{base}/{page}", {"fields": "id,name", "access_token": token})
-        print(f"page {page}: HTTP {status} {json.dumps(_redact(body, token))}")
+    if not token or not page:
+        sys.exit("META_SYSTEM_TOKEN and FB_PAGE_ID must both be set.")
+    base = f"https://graph.facebook.com/{GRAPH_VERSION}"
+    print(f"Token prefix: {token[:4]}..., length {len(token)}")
+    status, body = _call("GET", f"{base}/me", {"fields": "id,name", "access_token": token})
+    print(f"me: HTTP {status} {json.dumps(_redact(body, token))}")
+    status, body = _call("GET", f"{base}/me/permissions", {"access_token": token})
+    if isinstance(body, dict) and isinstance(body.get("data"), list):
+        print("Granted:", ", ".join(p["permission"] for p in body["data"] if p.get("status") == "granted"))
+    else:
+        print(f"permissions: HTTP {status} {json.dumps(_redact(body, token))}")
+    status, body = _call("GET", f"{base}/{page}", {"fields": "id,name,access_token", "access_token": token})
+    ok = status == 200 and bool(body.get("access_token"))
+    shown = {k: v for k, v in body.items() if k != "access_token"} if isinstance(body, dict) else body
+    print(f"page {page}: HTTP {status} {json.dumps(_redact(shown, token))} | page token available: {ok}")
+    status, body = _call("GET", f"{base}/{page}", {"fields": "instagram_business_account{id,username}", "access_token": token})
+    print(f"linked Instagram: HTTP {status} {json.dumps(_redact(body, token))}")
+    if not ok:
+        sys.exit("FAIL: cannot get a Page token.")
+    print("Facebook check passed.")
 
 
 if __name__ == "__main__":
