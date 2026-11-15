@@ -1,0 +1,54 @@
+{
+ "id": "game-2026_09_TB_CHI",
+ "type": "game",
+ "season": 2026,
+ "week": 9,
+ "status": "final",
+ "mode": "dry-run",
+ "trim": 0,
+ "built": "2026-11-15T23:18:47+00:00",
+ "rows": [
+  {
+   "rank": "1",
+   "name": "Baker Mayfield",
+   "team": "TB",
+   "pts": 90
+  },
+  {
+   "rank": "2",
+   "name": "Caleb Williams",
+   "team": "CHI",
+   "pts": 80
+  },
+  {
+   "rank": "3",
+   "name": "Bucky Irving",
+   "team": "TB",
+   "pts": 35
+  },
+  {
+   "rank": "4",
+   "name": "Luther Burden III",
+   "team": "CHI",
+   "pts": 31
+  },
+  {
+   "rank": "T-5",
+   "name": "Bears defense",
+   "team": "CHI",
+   "pts": 28
+  },
+  {
+   "rank": "T-5",
+   "name": "Buccaneers defense",
+   "team": "TB",
+   "pts": 28
+  },
+  {
+   "rank": "7",
+   "name": "Kalif Raymond",
+   "team": "CHI",
+   "pts": 15
+  }
+ ]
+}
