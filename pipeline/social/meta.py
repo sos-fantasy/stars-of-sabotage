@@ -148,8 +148,8 @@ def check_facebook():
     base = f"https://graph.facebook.com/{GRAPH_VERSION}"
     for path, fields in [("me", "id,name"), ("me/accounts", "id,name,tasks")]:
         status, body = _call("GET", f"{base}/{path}", {"fields": fields, "access_token": token})
-        if isinstance(body.get("data"), list):
-            body = {"data": [{k: v for k, v in pg.items() if k != "access_token"} for pg in body["data"]]}
+        if isinstance(body, dict) and isinstance(body.get("data"), list):
+            body = {"data": [{k: v for k, v in pg.items() if k != "access_token"} if isinstance(pg, dict) else pg for pg in body["data"]]}
         print(f"{path}: HTTP {status} {json.dumps(_redact(body, token))}")
     page = os.environ.get("FB_PAGE_ID", "").strip()
     if page:
