@@ -59,6 +59,7 @@ def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = ""
 {robots}<title>{escape(title)}</title>
 <meta name="description" content="{escape(DESCRIPTION)}">
 <meta name="theme-color" content="#15140f">
+<meta name="p:domain_verify" content="a34207844a252040ade648a9d1ae5886"/>
 <meta property="og:title" content="{escape(title)}">
 <meta property="og:description" content="{escape(DESCRIPTION)}">
 <meta property="og:image" content="assets/og-image.jpg">
