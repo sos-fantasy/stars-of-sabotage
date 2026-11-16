@@ -135,6 +135,19 @@ def _live(url: str) -> bool:
         return False
 
 
+def _retry_fetch(post, label: str, tries: int = 3, pause: int = 60):
+    """Instagram sometimes cannot download a just-hosted image while Hostinger's cache warms
+    (error subcode 2207052, Nov 16, 2026; a retry two minutes later worked). Retry only that."""
+    for n in range(1, tries + 1):
+        try:
+            return post()
+        except SystemExit as e:
+            if "2207052" not in str(e) or n == tries:
+                raise
+            print(f"{label}: image download failed on try {n}; retrying in {pause}s")
+            time.sleep(pause)
+
+
 def cmd_publish(a) -> int:
     import meta  # needs tokens in the environment
 
@@ -167,7 +180,8 @@ def cmd_publish(a) -> int:
                     import pinterest
                     out = pinterest.publish_pinterest(url, json.loads(caption))
                 else:
-                    out = {"instagram": meta.publish_instagram, "facebook": meta.publish_facebook}[platform](url, caption)
+                    fn = {"instagram": meta.publish_instagram, "facebook": meta.publish_facebook}[platform]
+                    out = _retry_fetch(lambda: fn(url, caption), f"{cid} {platform}")
                 rec[platform] = out | {"at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
             except SystemExit as e:
                 print(f"{cid} {platform}: {e}")

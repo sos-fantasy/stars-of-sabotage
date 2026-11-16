@@ -181,3 +181,19 @@ def test_lost_fumble_and_single_pick_six_wording():
             n_ints=1, pts_int=10, n_pick_sixes=1, pts_pick_six=21, sabotage_pts=48)
     item = top7.player_item(r, CFG)
     assert top7.fact_words(item) == "1 interception (returned for a touchdown) and 1 fumble (lost)"
+
+
+def test_instagram_fetch_failure_is_retried_but_other_errors_are_not(monkeypatch):
+    import run
+    monkeypatch.setattr(run.time, "sleep", lambda s: None)
+    calls = []
+    def flaky():
+        calls.append(1)
+        if len(calls) < 2:
+            raise SystemExit('HTTP 400 {"error_subcode": 2207052}')
+        return {"id": "1"}
+    assert run._retry_fetch(flaky, "t") == {"id": "1"} and len(calls) == 2
+    def bad():
+        raise SystemExit("HTTP 400 invalid token")
+    with pytest.raises(SystemExit):
+        run._retry_fetch(bad, "t")
