@@ -86,6 +86,7 @@ def layout(title: str, body: str, *, page: str, noindex: bool, scripts: str = ""
   <p id="foot-status" class="foot-status"></p>
   <p>Data: <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Scores are computed by Stars of Sabotage and are not official.</p>
   <p>Not affiliated with or endorsed by the NFL, any NFL team, Yahoo, ESPN, CBS Sports, or Sleeper.</p>
+  <p><a href="privacy.html">Privacy policy</a></p>
 </footer>
 {scripts}
 </body>
@@ -585,6 +586,61 @@ def _hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
 
 
+PRIVACY_BODY = """
+<article class="prose">
+<p class="eyebrow">Effective November 15, 2026</p>
+<h1>Privacy <span class="hl">policy</span></h1>
+<p class="lede">Stars of Sabotage is run by Sudden Works LLC. This page covers starsofsabotage.com and the Stars of Sabotage accounts on Instagram, Facebook, X and Pinterest.</p>
+
+<h2>What the website collects</h2>
+<p>Nothing that identifies you. The site has no sign-up, no accounts, no forms, no ads and no analytics. It sets no cookies and stores nothing in your browser.</p>
+<p>Our web host, Hostinger, keeps standard server logs when any page loads. A log line can include your IP address, browser type, the page requested and the time. We do not use those logs to track or profile visitors.</p>
+<p>The Video page shows thumbnails served by YouTube (i.ytimg.com), so loading that page sends your IP address to YouTube. The YouTube player loads only after you press play, from the privacy-enhanced youtube-nocookie.com domain. From that point YouTube's own privacy policy applies.</p>
+
+<h2>How we post to social media</h2>
+<p>A program we run posts our own score cards to the Stars of Sabotage accounts on Instagram, Facebook and Pinterest through each platform's official API. On Pinterest it creates Pins and boards on the Stars of Sabotage account and reads that account's own profile and board list.</p>
+<p>The program does not read, collect or store information about any other Pinterest, Instagram, Facebook or X user. It does not read your Pins, boards, followers or messages.</p>
+<p>The access tokens that let the program post are stored as encrypted GitHub Actions secrets, which only the account owner can manage. They are used only to post to and manage our own accounts, and are never shared or sold.</p>
+
+<h2>Sharing and selling</h2>
+<p>We do not sell or share personal information.</p>
+
+<h2>Children</h2>
+<p>The site is a general audience sports stats site. We do not knowingly collect information from anyone, including children under 13.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, the new version will be posted here with a new effective date.</p>
+
+<h2>Contact</h2>
+<p>Questions about this policy: <a href="mailto:starsofsabotage@gmail.com">starsofsabotage@gmail.com</a>.</p>
+</article>
+"""
+
+CALLBACK_BODY = """
+<article class="prose">
+<p class="eyebrow">Pinterest connection</p>
+<h1>Pinterest <span class="hl">connected</span></h1>
+<p class="lede" id="cb-msg">Reading the reply from Pinterest.</p>
+<p><code id="cb-code" style="font-size:18px;word-break:break-all"></code></p>
+<p><button type="button" id="cb-copy" class="btn" hidden>Copy code</button></p>
+<p class="hint">This code works once and expires within minutes. It is useless without the app secret, which never leaves our build system.</p>
+</article>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), code = q.get("code"), err = q.get("error");
+  const msg = document.getElementById("cb-msg"), box = document.getElementById("cb-code"), btn = document.getElementById("cb-copy");
+  if (err) { msg.textContent = "Pinterest said no: " + err + ". Start the connection again."; return; }
+  if (!code) { msg.textContent = "No code in this link. Start the connection from the Pinterest workflow."; return; }
+  msg.textContent = "Copy this code into the Pinterest workflow (connect action) to finish.";
+  box.textContent = code; btn.hidden = false;
+  btn.addEventListener("click", () => navigator.clipboard.writeText(code).then(() => { btn.textContent = "Copied"; }, () => {
+    const r = document.createRange(); r.selectNodeContents(box); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  }));
+})();
+</script>
+"""
+
+
 HTACCESS = """# Written by pipeline/site_build.py
 # Pages revalidate every visit; data refreshes within 5 minutes; versioned assets cache long.
 <IfModule mod_headers.c>
@@ -669,6 +725,11 @@ def build(out: Path, noindex: bool = True, records: dict | None = None, boot: di
     (out / "improvements.html").write_text(page("Projection review | Stars of Sabotage", IMPROVE_BODY, "matchups", "improvements"))
     (out / "depth.html").write_text(page("Depth charts | Stars of Sabotage", DEPTH_BODY, "depth", "depth"))
     (out / "video.html").write_text(page("Reel Good Sabotage | Stars of Sabotage", VIDEO_BODY, "video", "videos"))
+    (out / "privacy.html").write_text(page("Privacy policy | Stars of Sabotage", PRIVACY_BODY, "privacy", "foot"))
+    cb = page("Pinterest connection | Stars of Sabotage", CALLBACK_BODY, "callback", "")
+    if 'name="robots"' not in cb:
+        cb = cb.replace("<title>", '<meta name="robots" content="noindex">\n<title>', 1)
+    (out / "pinterest-callback.html").write_text(cb)
 
 
 if __name__ == "__main__":
