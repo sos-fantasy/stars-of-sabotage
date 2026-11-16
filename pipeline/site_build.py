@@ -645,7 +645,7 @@ CALLBACK_BODY = """
 HTACCESS = """# Written by pipeline/site_build.py
 # Pages revalidate every visit; data refreshes within 5 minutes; versioned assets cache long.
 <IfModule mod_headers.c>
-  <FilesMatch "\\.(html)$">
+  <FilesMatch "\\.(html|xml)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
   <FilesMatch "\\.(json)$">
