@@ -184,7 +184,11 @@ def test_lost_fumble_and_single_pick_six_wording():
 
 
 def test_instagram_fetch_failure_is_retried_but_other_errors_are_not(monkeypatch):
-    import run
+    import importlib.util  # pipeline/run.py (site build) shares the name, so load the social one by path
+    spec = importlib.util.spec_from_file_location(
+        "social_run", Path(__file__).resolve().parents[1] / "pipeline" / "social" / "run.py")
+    run = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run)
     monkeypatch.setattr(run.time, "sleep", lambda s: None)
     calls = []
     def flaky():
