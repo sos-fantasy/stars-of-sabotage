@@ -16,6 +16,12 @@ def _u(p: str) -> str:
     return (ASSETS / p).as_uri()
 
 
+def sub_html(sub: str) -> str:
+    """Keep each separator with the word after it, so a wrapped line never ends on a dot."""
+    chunks = sub.split(" · ")
+    return " ".join(f'<span style="white-space:nowrap">{"· " if i else ""}{escape(c)}</span>' for i, c in enumerate(chunks))
+
+
 def top_card(card: dict, trim: int = 0) -> str:
     best = max(r["pts"] for r in card["rows"]) or 1
     from top7 import stat_line  # local import keeps this file free of data logic
@@ -27,7 +33,7 @@ def top_card(card: dict, trim: int = 0) -> str:
         rows.append(
             f'<div class="r"><span class="rk">{escape(r["rank"])}</span><div class="mid">'
             f'<div class="nm"><b>{escape(r["name"])}</b><span>{escape(r["pos"])} · {escape(r["team"])}</span></div>'
-            f'<div class="ln">{" · ".join(f"<span>{escape(b)}</span>" for b in stat_line(r).split(" · "))}</div>'
+            f'<div class="ln">{" ".join(f"<span>{'· ' if j else ''}{escape(b)}</span>" for j, b in enumerate(stat_line(r).split(" · ")))}</div>'
             f'<div class="bar"><i style="width:{w:.1f}%;background:{color}"></i></div></div>'
             f'<span class="pt">{r["pts"]}</span></div>'
         )
@@ -65,7 +71,7 @@ h1{{margin:20px 0 0;font-family:Anton,Impact,sans-serif;font-weight:400;font-siz
 .word{{font-family:Anton,Impact,sans-serif;font-size:34px;line-height:1;text-transform:uppercase}} .word span{{color:#f2b705}}
 .url{{font-size:16px;letter-spacing:3px;color:#a39b8a;margin-top:4px}} .legal{{text-align:right;color:#a39b8a;line-height:1.5}}
 </style></head><body><div class="card"><div class="bar0"></div>
-<div class="head"><div><div class="eb">{escape(card['eyebrow'])}</div><div class="sub">{escape(card['sub'])}</div>
+<div class="head"><div><div class="eb">{escape(card['eyebrow'])}</div><div class="sub">{sub_html(card['sub'])}</div>
 <h1>{h1}</h1></div>{mascot}</div>
 <div class="th"><span>RANK</span><span>PLAYER · WHAT HE DID</span><span style="text-align:right">POINTS</span></div>
 <div class="list">{''.join(rows)}</div>

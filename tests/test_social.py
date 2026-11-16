@@ -164,3 +164,20 @@ def test_pinterest_feed_rules(tmp_path, monkeypatch):
     assert doc.getElementsByTagName("title")[1].firstChild.data == "Top 7 & more"
     with pytest.raises(ValueError):  # Pinterest rejects links off the claimed domain
         feed.add(dict(item, id="x", link="https://instagram.com/p/abc"))
+
+
+def test_one_liner_facts_cover_every_point():
+    # Daniel Jones, week 10: 11 inc x2 = 22, 2 INT x10 = 20, pick six +21, 1 sack x5 = 5,
+    # 1 fumble x7 = 7, 5 carries = 5. Total 80. Every stat must appear in the sentence.
+    r = row(n_incomplete=11, pts_incomplete=22, n_ints=2, pts_int=20, n_pick_sixes=1, pts_pick_six=21,
+            n_sacks=1, pts_sacks=5, n_fumbles=1, pts_fumble=7, n_carries=5, pts_carries=5, sabotage_pts=80)
+    item = top7.player_item(r, CFG)
+    assert top7.fact_words(item) == ("2 interceptions (1 a pick six), 11 incompletions, 1 fumble, "
+                                     "1 sack and 5 carries")
+
+
+def test_lost_fumble_and_single_pick_six_wording():
+    r = row(n_fumbles=1, pts_fumble=7, n_fumbles_lost=1, pts_fumble_lost=10,
+            n_ints=1, pts_int=10, n_pick_sixes=1, pts_pick_six=21, sabotage_pts=48)
+    item = top7.player_item(r, CFG)
+    assert top7.fact_words(item) == "1 interception (returned for a touchdown) and 1 fumble (lost)"

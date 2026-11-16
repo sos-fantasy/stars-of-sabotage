@@ -167,15 +167,30 @@ def stat_line(item: dict) -> str:
     return " · ".join(bits)
 
 
-def fact_words(item: dict, limit: int = 3) -> str:
-    """'2 interceptions, 10 incompletions and 11 carries', biggest point sources first."""
+def fact_words(item: dict) -> str:
+    """Every scored stat, biggest first, with bonuses folded into the stat they belong to:
+    '11 incompletions, 2 interceptions (1 a pick six), 1 sack, 1 fumble and 5 carries'.
+    The one-liners say things like 'turned X into 80 points', so nothing may be left out."""
     if item["kind"] == "defense":
         return f"{item['points_allowed']} points allowed"
-    parts = sorted([p for p in item["parts"] if not p["bonus"]], key=lambda p: -(p["pts"] or 99))[:limit]
-    words = []
-    for p in parts:
+    bonus = {p["field"]: p for p in item["parts"] if p["bonus"]}
+    base = []
+    for p in item["parts"]:
+        if p["bonus"]:
+            continue
         one, many = WORDS[p["field"]]
-        words.append(f"{p['n']} {one if p['n'] == 1 else many}")
+        w = f"{p['n']} {one if p['n'] == 1 else many}"
+        weight = p["pts"] if p["pts"] is not None else 99
+        if p["field"] == "n_ints" and "n_pick_sixes" in bonus:
+            b = bonus["n_pick_sixes"]
+            w += " (returned for a touchdown)" if p["n"] == 1 else f" ({b['n']} a pick six)" if b["n"] == 1 else f" ({b['n']} pick sixes)"
+            weight += b["pts"] or 0
+        if p["field"] == "n_fumbles" and "n_fumbles_lost" in bonus:
+            b = bonus["n_fumbles_lost"]
+            w += " (lost)" if p["n"] == 1 else f" ({b['n']} lost)"
+            weight += b["pts"] or 0
+        base.append((weight, w))
+    words = [w for _, w in sorted(base, key=lambda x: -x[0])]
     if len(words) == 1:
         return words[0]
     return ", ".join(words[:-1]) + " and " + words[-1]
