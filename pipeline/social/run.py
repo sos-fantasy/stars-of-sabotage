@@ -142,10 +142,14 @@ def cmd_publish(a) -> int:
     failures = 0
     for cid in list(pending):
         url = SITE + f"{cid}.jpg"
-        deadline = time.time() + a.wait
-        while not _live(url) and time.time() < deadline:
-            time.sleep(30)
-        if not _live(url):
+        # Instagram fetches the image itself, so wait for two good reads in a row (one check per
+        # round). A single re-check right after one success failed on Nov 16 while the cache warmed.
+        deadline, good = time.time() + a.wait, 0
+        while good < 2 and time.time() < deadline:
+            good = good + 1 if _live(url) else 0
+            if good < 2:
+                time.sleep(30)
+        if good < 2:
             print(f"{cid}: image not live yet at {url}; will retry next run")
             continue
         rec = posted.setdefault(cid, {})
