@@ -165,6 +165,12 @@ td.loading { color: var(--muted); padding: 24px; }
 .site-foot p { margin: 4px 0; }
 .site-foot a { color: var(--muted); }
 .foot-status { color: var(--muted); }
+.follow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; }
+.follow-label { font-family: var(--display); font-size: 18px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
+.follow-links { display: flex; gap: 6px; }
+.site-foot .follow-links a { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+  color: var(--muted); border: 1px solid var(--line-2); border-radius: 50%; transition: color .15s, border-color .15s, background .15s; }
+.site-foot .follow-links a:hover, .site-foot .follow-links a:focus-visible { color: var(--bg); background: var(--yellow); border-color: var(--yellow); outline: none; }
 
 @media (max-width: 720px) {
   body { font-size: 14px; }
