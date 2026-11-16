@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pinterest connection | Stars of Sabotage</title>
+<meta name="description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta name="theme-color" content="#15140f">
+<meta property="og:title" content="Pinterest connection | Stars of Sabotage">
+<meta property="og:description" content="Sabotage fantasy football stats: NFL players and defenses ranked by incompletions, sacks, turnovers, missed kicks, and points allowed.">
+<meta property="og:image" content="assets/og-image.jpg">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css?v=0ffd1055bc">
+</head>
+<body class="page-callback" data-dv="5afba8cbf6641a36">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <a class="brand" href="./" aria-label="Stars of Sabotage home">
+    <picture><source srcset="assets/whoopsie-sm.webp" type="image/webp"><img src="assets/whoopsie-sm.png" alt="" width="44" height="49"></picture>
+    <span class="wordmark">Stars of <em>Sabotage</em></span>
+  </a>
+  <nav aria-label="Main"><a href="./">Leaderboard</a><a href="compare.html">Compare</a><a href="defenses.html">Defenses</a><a href="video.html">Video</a><a href="matchups.html">Matchups</a><a href="depth.html">Depth Charts</a><a href="super-stars.html">Super Stars</a><a href="method.html">Scoring</a></nav>
+  <div class="hsearch" data-search role="search">
+    <label class="sr-only" for="q-head">Search players and teams</label>
+    <input id="q-head" type="search" placeholder="Search players, teams" autocomplete="off" spellcheck="false"
+      role="combobox" aria-expanded="false" aria-controls="q-head-list" aria-autocomplete="list">
+    <ul id="q-head-list" role="listbox" class="results" hidden></ul>
+  </div>
+</header>
+<main id="main">
+
+<article class="prose">
+<p class="eyebrow">Pinterest connection</p>
+<h1>Pinterest <span class="hl">connected</span></h1>
+<p class="lede" id="cb-msg">Reading the reply from Pinterest.</p>
+<p><code id="cb-code" style="font-size:18px;word-break:break-all"></code></p>
+<p><button type="button" id="cb-copy" class="btn" hidden>Copy code</button></p>
+<p class="hint">This code works once and expires within minutes. It is useless without the app secret, which never leaves our build system.</p>
+</article>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), code = q.get("code"), err = q.get("error");
+  const msg = document.getElementById("cb-msg"), box = document.getElementById("cb-code"), btn = document.getElementById("cb-copy");
+  if (err) { msg.textContent = "Pinterest said no: " + err + ". Start the connection again."; return; }
+  if (!code) { msg.textContent = "No code in this link. Start the connection from the Pinterest workflow."; return; }
+  msg.textContent = "Copy this code into the Pinterest workflow (connect action) to finish.";
+  box.textContent = code; btn.hidden = false;
+  btn.addEventListener("click", () => navigator.clipboard.writeText(code).then(() => { btn.textContent = "Copied"; }, () => {
+    const r = document.createRange(); r.selectNodeContents(box); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  }));
+})();
+</script>
+
+</main>
+<footer class="site-foot">
+  <p id="foot-status" class="foot-status"></p>
+  <p>Data: <a href="https://github.com/nflverse/nflverse-data">nflverse</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Scores are computed by Stars of Sabotage and are not official.</p>
+  <p>Not affiliated with or endorsed by the NFL, any NFL team, Yahoo, ESPN, CBS Sports, or Sleeper.</p>
+  <p><a href="privacy.html">Privacy policy</a></p>
+</footer>
+<script type="module" src="assets/common.js?v=dd86e435db"></script>
+
+</body>
+</html>
