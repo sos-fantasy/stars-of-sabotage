@@ -314,7 +314,8 @@ def pinterest_caption(card: dict, mid: str) -> dict:
     rows = "; ".join(f"{r['rank']}. {r['name']} {r['team']} {r['pts']}" for r in card["rows"])
     return {
         "title": f"Top {n} fantasy football saboteurs from {where}",
-        "description": f"{card['blurb']} {mid} Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+        # No "provisional" note: Pins stay in search for weeks, long after stat corrections close.
+        "description": f"{card['blurb']} Top {n} saboteurs from {where}. Every player ranked by the plays that hurt his team at starsofsabotage.com.",
         "link": "https://starsofsabotage.com/",
         "alt_text": f"Stars of Sabotage card ranking the top {n} saboteurs from {where}, with Sabotage points: {rows}.",
     }
