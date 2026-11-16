@@ -1,0 +1,54 @@
+{
+ "id": "wreckage-2026-10",
+ "type": "wreckage",
+ "season": 2026,
+ "week": 10,
+ "status": "in_progress",
+ "mode": "live",
+ "trim": 0,
+ "built": "2026-11-16T15:01:24+00:00",
+ "rows": [
+  {
+   "rank": "1",
+   "name": "Daniel Jones",
+   "team": "IND",
+   "pts": 80
+  },
+  {
+   "rank": "2",
+   "name": "Michael Penix Jr.",
+   "team": "ATL",
+   "pts": 76
+  },
+  {
+   "rank": "3",
+   "name": "Deshaun Watson",
+   "team": "CLE",
+   "pts": 75
+  },
+  {
+   "rank": "4",
+   "name": "Jordan Love",
+   "team": "GB",
+   "pts": 71
+  },
+  {
+   "rank": "5",
+   "name": "Tyler Shough",
+   "team": "NO",
+   "pts": 68
+  },
+  {
+   "rank": "6",
+   "name": "Carson Beck",
+   "team": "ARI",
+   "pts": 67
+  },
+  {
+   "rank": "7",
+   "name": "Kyle McCord",
+   "team": "MIA",
+   "pts": 64
+  }
+ ]
+}

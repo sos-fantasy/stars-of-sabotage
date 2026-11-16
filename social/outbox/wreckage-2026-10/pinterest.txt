@@ -1,0 +1,6 @@
+{
+ "title": "Top 7 fantasy football saboteurs from the 11 Sunday afternoon games of week 10",
+ "description": "Daniel Jones turned 11 incompletions, 2 interceptions and 1 fumble into 80 Sabotage points. Top 7 saboteurs from the 11 Sunday afternoon games of week 10. Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+ "link": "https://starsofsabotage.com/",
+ "alt_text": "Stars of Sabotage card ranking the top 7 saboteurs from the 11 Sunday afternoon games of week 10, with Sabotage points: 1. Daniel Jones IND 80; 2. Michael Penix Jr. ATL 76; 3. Deshaun Watson CLE 75; 4. Jordan Love GB 71; 5. Tyler Shough NO 68; 6. Carson Beck ARI 67; 7. Kyle McCord MIA 64."
+}
