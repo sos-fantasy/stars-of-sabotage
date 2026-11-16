@@ -146,10 +146,19 @@ def cmd_publish(a) -> int:
         for platform in cfg["platforms"]:
             if platform in rec:
                 continue
-            caption = (OUTBOX / cid / f"{platform}.txt").read_text(encoding="utf-8").strip()
+            cap_file = OUTBOX / cid / f"{platform}.txt"
+            if not cap_file.exists():
+                print(f"{cid} {platform}: no caption file (card built before {platform} was added); skipped")
+                rec[platform] = {"skipped": "no caption"}
+                continue
+            caption = cap_file.read_text(encoding="utf-8").strip()
             try:
-                fn = {"instagram": meta.publish_instagram, "facebook": meta.publish_facebook}[platform]
-                rec[platform] = fn(url, caption) | {"at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+                if platform == "pinterest":
+                    import pinterest
+                    out = pinterest.publish_pinterest(url, json.loads(caption))
+                else:
+                    out = {"instagram": meta.publish_instagram, "facebook": meta.publish_facebook}[platform](url, caption)
+                rec[platform] = out | {"at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
             except SystemExit as e:
                 print(f"{cid} {platform}: {e}")
                 failures += 1

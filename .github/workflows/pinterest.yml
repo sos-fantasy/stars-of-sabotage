@@ -1,0 +1,60 @@
+name: Pinterest
+
+# Actions tab > Pinterest > Run workflow.
+#   auth-url   prints the approval link (open it signed in as Stars of Sabotage)
+#   connect    paste the code from starsofsabotage.com/pinterest-callback.html; saves tokens as secrets
+#   check      confirms the token and lists boards with their IDs
+#   test-pin   posts the How Sabotage Scores card to PINTEREST_BOARD_ID
+#   refresh    renews the tokens (also runs every Monday on its own)
+# Pinterest replaces the refresh token every time; this workflow saves the new one with SECRETS_PAT.
+on:
+  schedule:
+    - cron: "41 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        options: [auth-url, connect, check, test-pin, refresh]
+        default: auth-url
+      code:
+        description: "For connect only: the code shown on the callback page (works once, expires in minutes)"
+        required: false
+
+permissions:
+  contents: read
+
+# Shares a lane with the posting workflow so a refresh never swaps tokens mid-post.
+concurrency:
+  group: social-schedule
+  cancel-in-progress: false
+
+jobs:
+  pinterest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PINTEREST_APP_ID: ${{ vars.PINTEREST_APP_ID }}
+      PINTEREST_APP_SECRET: ${{ secrets.PINTEREST_APP_SECRET }}
+      PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+      PINTEREST_REFRESH_TOKEN: ${{ secrets.PINTEREST_REFRESH_TOKEN }}
+      PINTEREST_BOARD_ID: ${{ vars.PINTEREST_BOARD_ID }}
+      PINTEREST_API: ${{ vars.PINTEREST_API }}
+      SECRETS_PAT: ${{ secrets.SECRETS_PAT }}
+      ACTION: ${{ github.event_name == 'schedule' && 'refresh' || inputs.action }}
+      CODE: ${{ inputs.code }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Run
+        run: |
+          if [ "$ACTION" = refresh ] && [ -z "$PINTEREST_REFRESH_TOKEN" ]; then echo "Pinterest not connected yet; nothing to refresh."; exit 0; fi
+          case "$ACTION" in
+            auth-url) python pipeline/social/pinterest.py auth-url ;;
+            connect)  echo "::add-mask::$CODE"; python pipeline/social/pinterest.py connect "$CODE" ;;
+            check)    python pipeline/social/pinterest.py check ;;
+            refresh)  python pipeline/social/pinterest.py refresh ;;
+            test-pin) python pipeline/social/pinterest.py pin https://starsofsabotage.com/assets/social/how-sabotage-scores.jpg pipeline/social/captions/how-sabotage-scores.pinterest.json ;;
+          esac

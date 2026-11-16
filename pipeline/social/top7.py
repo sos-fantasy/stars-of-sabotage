@@ -303,4 +303,18 @@ def captions(card: dict) -> dict:
     return {
         "instagram": f"{card['blurb']}\n\n{mid}\n\nWeekly rankings at starsofsabotage.com (link in bio).\n\n#fantasyfootball #fantasyfootballhumor",
         "facebook": f"{card['blurb']}\n\n{mid}\n\nWeekly rankings: https://starsofsabotage.com",
+        "pinterest": json.dumps(pinterest_caption(card, mid), ensure_ascii=False, indent=1),
+    }
+
+
+def pinterest_caption(card: dict, mid: str) -> dict:
+    """Pin title, description and alt text. The Pin links to the site, so no 'link in bio'."""
+    n, w = len(card["rows"]), card["week"]
+    where = f"{card['matchup']} (week {w})" if card["type"] == "game" else f"{card['matchup']} of week {w}"
+    rows = "; ".join(f"{r['rank']}. {r['name']} {r['team']} {r['pts']}" for r in card["rows"])
+    return {
+        "title": f"Top {n} fantasy football saboteurs from {where}",
+        "description": f"{card['blurb']} {mid} Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+        "link": "https://starsofsabotage.com/",
+        "alt_text": f"Stars of Sabotage card ranking the top {n} saboteurs from {where}, with Sabotage points: {rows}.",
     }

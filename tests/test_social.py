@@ -118,9 +118,32 @@ def test_due_window_and_done():
 
 
 def test_captions_have_no_link_text_rules():
-    card = {"type": "game", "rows": [{}] * 7, "matchup": "Commanders 24, Giants 21", "week": 10,
+    card = {"type": "game", "rows": [{"rank": "1", "name": "A", "team": "WAS", "pts": 9}] * 7,
+            "matchup": "Commanders 24, Giants 21", "week": 10,
             "status": "provisional", "blurb": "Line."}
     caps = top7.captions(card)
     assert "link in bio" in caps["instagram"] and "https://" not in caps["instagram"]
     assert "https://starsofsabotage.com" in caps["facebook"]
     assert "—" not in caps["instagram"] + caps["facebook"]  # house style: no em dashes
+
+
+def test_pinterest_caption_fits_limits_and_names_every_row():
+    import json
+    import pinterest
+    rows = [{"rank": "1", "name": "Jayden Daniels", "team": "WAS", "pts": 56},
+            {"rank": "2", "name": "Jaxson Dart", "team": "NYG", "pts": 47}]
+    card = {"type": "game", "rows": rows, "matchup": "Commanders 24, Giants 21", "week": 10,
+            "status": "provisional", "blurb": "Line."}
+    pin = json.loads(top7.captions(card)["pinterest"])
+    assert pin["title"] == "Top 2 fantasy football saboteurs from Commanders 24, Giants 21 (week 10)"
+    assert ":" not in pin["title"]  # house style: no colon titles
+    assert "1. Jayden Daniels WAS 56; 2. Jaxson Dart NYG 47" in pin["alt_text"]
+    assert pin["link"] == "https://starsofsabotage.com/"
+    out = pinterest.pin_fields(pin | {"description": "x" * 600})
+    assert len(out["description"]) == 500 and len(out["title"]) <= 100
+
+
+def test_pinterest_refuses_empty_fields():
+    import pinterest
+    with pytest.raises(SystemExit):
+        pinterest.pin_fields({"title": " ", "description": "d", "alt_text": "a"})
