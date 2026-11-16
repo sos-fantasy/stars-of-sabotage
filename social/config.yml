@@ -1,4 +1,5 @@
 # Social posting switches. Owner decisions, November 15, 2026.
+# Game and Wreckage cards set to live by the owner on November 15, 2026 (week 10).
 #
 # mode per card type:
 #   off      never builds
@@ -6,7 +7,7 @@
 #   live     builds, hosts the JPEG on starsofsabotage.com, then posts
 # Flip a type to live only after its dry runs look right.
 mode:
-  game: dry-run
-  wreckage: dry-run
+  game: live
+  wreckage: live
 
 platforms: [instagram, facebook]

@@ -26,7 +26,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import card_html  # noqa: E402
-import schedule  # noqa: E402
+import post_times as schedule  # noqa: E402
 import top7  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]

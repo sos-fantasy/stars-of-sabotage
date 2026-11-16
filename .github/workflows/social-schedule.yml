@@ -7,6 +7,10 @@ name: Social schedule
 on:
   schedule:
     - cron: "25 * * * *"
+  # GitHub skips or delays some scheduled runs, so also run after every data update.
+  workflow_run:
+    workflows: ["Update scores"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       card:
