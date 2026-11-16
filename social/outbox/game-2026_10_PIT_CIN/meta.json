@@ -1,0 +1,54 @@
+{
+ "id": "game-2026_10_PIT_CIN",
+ "type": "game",
+ "season": 2026,
+ "week": 10,
+ "status": "in_progress",
+ "mode": "live",
+ "trim": 0,
+ "built": "2026-11-16T18:05:32+00:00",
+ "rows": [
+  {
+   "rank": "1",
+   "name": "Aaron Rodgers",
+   "team": "PIT",
+   "pts": 52
+  },
+  {
+   "rank": "2",
+   "name": "Steelers defense",
+   "team": "PIT",
+   "pts": 42
+  },
+  {
+   "rank": "3",
+   "name": "Ja'Marr Chase",
+   "team": "CIN",
+   "pts": 29
+  },
+  {
+   "rank": "4",
+   "name": "Chase Brown",
+   "team": "CIN",
+   "pts": 26
+  },
+  {
+   "rank": "T-5",
+   "name": "Jaylen Warren",
+   "team": "PIT",
+   "pts": 24
+  },
+  {
+   "rank": "T-5",
+   "name": "Joe Burrow",
+   "team": "CIN",
+   "pts": 24
+  },
+  {
+   "rank": "7",
+   "name": "Bengals defense",
+   "team": "CIN",
+   "pts": 21
+  }
+ ]
+}

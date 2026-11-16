@@ -1,0 +1,6 @@
+{
+ "title": "Top 7 fantasy football saboteurs from Bengals 38, Steelers 18 (week 10)",
+ "description": "Aaron Rodgers put up 52 Sabotage points on 14 incompletions, 3 sacks, 1 fumble and 2 carries. Top 7 saboteurs from Bengals 38, Steelers 18 (week 10). Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+ "link": "https://starsofsabotage.com/",
+ "alt_text": "Stars of Sabotage card ranking the top 7 saboteurs from Bengals 38, Steelers 18 (week 10), with Sabotage points: 1. Aaron Rodgers PIT 52; 2. Steelers defense PIT 42; 3. Ja'Marr Chase CIN 29; 4. Chase Brown CIN 26; T-5. Jaylen Warren PIT 24; T-5. Joe Burrow CIN 24; 7. Bengals defense CIN 21."
+}
