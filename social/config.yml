@@ -11,3 +11,8 @@ mode:
   wreckage: live
 
 platforms: [instagram, facebook]
+
+# Pinterest, route 1: RSS feed at https://starsofsabotage.com/assets/social/auto/pinterest.xml
+# Every live card is added to the feed; Pinterest reads it within 24 hours (no API approval needed).
+# Turn this off if Pinterest gets cards another way (Instagram link or the API), or Pins will double.
+pinterest_feed: true

@@ -85,6 +85,7 @@ jobs:
         run: |
           mkdir -p live/assets/social/auto
           cp site/assets/social/auto/*.jpg live/assets/social/auto/
+          if [ -f site/assets/social/auto/pinterest.xml ]; then cp site/assets/social/auto/pinterest.xml live/assets/social/auto/; fi
           cd live
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"

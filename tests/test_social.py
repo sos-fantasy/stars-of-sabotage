@@ -147,3 +147,20 @@ def test_pinterest_refuses_empty_fields():
     import pinterest
     with pytest.raises(SystemExit):
         pinterest.pin_fields({"title": " ", "description": "d", "alt_text": "a"})
+
+
+def test_pinterest_feed_rules(tmp_path, monkeypatch):
+    import xml.dom.minidom
+    import feed
+    monkeypatch.setattr(feed, "ITEMS", tmp_path / "items.json")
+    monkeypatch.setattr(feed, "XML", tmp_path / "pinterest.xml")
+    item = {"id": "game-2026_10_PIT_CIN", "title": "Top 7 & more", "description": "<Line>",
+            "link": feed.card_link("game-2026_10_PIT_CIN", 2026, 10),
+            "image": "https://starsofsabotage.com/assets/social/auto/game-2026_10_PIT_CIN.jpg", "image_bytes": 1000}
+    assert item["link"] == "https://starsofsabotage.com/?season=2026&from=10&to=10&card=game-2026_10_PIT_CIN"
+    assert feed.add(dict(item)) is True
+    assert feed.add(dict(item)) is False  # same card never listed twice
+    doc = xml.dom.minidom.parse(str(tmp_path / "pinterest.xml"))  # escaped, well-formed
+    assert doc.getElementsByTagName("title")[1].firstChild.data == "Top 7 & more"
+    with pytest.raises(ValueError):  # Pinterest rejects links off the claimed domain
+        feed.add(dict(item, id="x", link="https://instagram.com/p/abc"))

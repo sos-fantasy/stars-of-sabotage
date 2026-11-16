@@ -109,6 +109,12 @@ def cmd_build(a) -> int:
                 shutil.copy(d / "card.jpg", AUTO / f"{card['id']}.jpg")
                 if card["id"] not in pending:
                     pending.append(card["id"])
+                if cfg.get("pinterest_feed") and (d / "pinterest.txt").exists():
+                    import feed
+                    pin = json.loads((d / "pinterest.txt").read_text(encoding="utf-8"))
+                    feed.add({"id": card["id"], "title": pin["title"], "description": pin["description"],
+                              "link": feed.card_link(card["id"], card["season"], card["week"]),
+                              "image": SITE + f"{card['id']}.jpg", "image_bytes": (d / "card.jpg").stat().st_size})
         except top7.CardError as e:
             # Data not ready (no final score yet) is normal early in the window: retry next hour.
             print(f"skip {slot['id']}: {e}")
