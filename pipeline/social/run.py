@@ -154,6 +154,10 @@ def cmd_publish(a) -> int:
     pending, posted, cfg = _json(PENDING, []), _json(POSTED, {}), config()
     failures = 0
     for cid in list(pending):
+        if all(pl in posted.get(cid, {}) for pl in cfg["platforms"]):
+            print(f"{cid}: already posted on every platform; dropping from pending")
+            pending.remove(cid)
+            continue
         url = SITE + f"{cid}.jpg"
         # Instagram fetches the image itself, so wait for two good reads in a row (one check per
         # round). A single re-check right after one success failed on Nov 16 while the cache warmed.

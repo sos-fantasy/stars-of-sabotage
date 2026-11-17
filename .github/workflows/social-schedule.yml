@@ -35,7 +35,11 @@ jobs:
       FB_PAGE_ID: ${{ vars.FB_PAGE_ID }}
       CARD: ${{ inputs.card }}
     steps:
+      # Always the newest main, not the commit the run was created on: a queued run must see the
+      # posting log the run before it saved (Nov 16, 2026: a stale log posted the Wreckage card twice).
       - uses: actions/checkout@v5
+        with:
+          ref: main
 
       - name: Check out the live site data
         uses: actions/checkout@v5
@@ -97,7 +101,10 @@ jobs:
 
       - name: Post live cards
         if: hashFiles('social/pending.json') != ''
-        run: python pipeline/social/run.py publish
+        run: |
+          # Reload the posting log from GitHub right before posting, in case another run saved since.
+          git pull -q --rebase origin main
+          python pipeline/social/run.py publish
 
       - name: Save the posting log
         if: always() && hashFiles('social/posted.json') != ''

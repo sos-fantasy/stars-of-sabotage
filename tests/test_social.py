@@ -201,3 +201,24 @@ def test_instagram_fetch_failure_is_retried_but_other_errors_are_not(monkeypatch
         raise SystemExit("HTTP 400 invalid token")
     with pytest.raises(SystemExit):
         run._retry_fetch(bad, "t")
+
+
+def test_publish_never_reposts_a_logged_card(tmp_path, monkeypatch):
+    # Nov 16, 2026: a run still listed wreckage-2026-10 as pending after another run had posted it.
+    import importlib.util, json as _j, types
+    spec = importlib.util.spec_from_file_location(
+        "social_run2", Path(__file__).resolve().parents[1] / "pipeline" / "social" / "run.py")
+    run = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run)
+    pending, posted = tmp_path / "pending.json", tmp_path / "posted.json"
+    pending.write_text('["wreckage-2026-10"]')
+    posted.write_text(_j.dumps({"wreckage-2026-10": {"instagram": {"id": "1"}, "facebook": {"id": "2"}}}))
+    monkeypatch.setattr(run, "PENDING", pending)
+    monkeypatch.setattr(run, "POSTED", posted)
+    monkeypatch.setattr(run, "config", lambda: {"platforms": ["instagram", "facebook"]})
+    monkeypatch.setattr(run, "_live", lambda url: pytest.fail("should not even check the image"))
+    def boom(*a):
+        pytest.fail("posted twice")
+    monkeypatch.setitem(sys.modules, "meta", types.SimpleNamespace(publish_instagram=boom, publish_facebook=boom))
+    assert run.cmd_publish(types.SimpleNamespace(wait=0)) == 0
+    assert not pending.exists()  # dropped from the queue
