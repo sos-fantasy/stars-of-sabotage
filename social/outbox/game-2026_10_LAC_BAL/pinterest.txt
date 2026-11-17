@@ -1,0 +1,6 @@
+{
+ "title": "Top 7 fantasy football saboteurs from Chargers 23, Ravens 20 (week 10)",
+ "description": "16 incompletions, 1 interception, 2 sacks and 2 carries. That was Jacoby Brissett, and it was worth 54 points. Top 7 saboteurs from Chargers 23, Ravens 20 (week 10). Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+ "link": "https://starsofsabotage.com/",
+ "alt_text": "Stars of Sabotage card ranking the top 7 saboteurs from Chargers 23, Ravens 20 (week 10), with Sabotage points: 1. Jacoby Brissett BAL 54; 2. Omarion Hampton LAC 31; T-3. Justin Herbert LAC 29; T-3. Zay Flowers BAL 29; 5. Ravens defense BAL 28; 6. Chargers defense LAC 21; 7. Derrick Henry BAL 20."
+}

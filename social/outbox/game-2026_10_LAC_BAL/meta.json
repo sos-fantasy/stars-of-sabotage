@@ -1,0 +1,54 @@
+{
+ "id": "game-2026_10_LAC_BAL",
+ "type": "game",
+ "season": 2026,
+ "week": 10,
+ "status": "provisional",
+ "mode": "live",
+ "trim": 0,
+ "built": "2026-11-17T14:07:21+00:00",
+ "rows": [
+  {
+   "rank": "1",
+   "name": "Jacoby Brissett",
+   "team": "BAL",
+   "pts": 54
+  },
+  {
+   "rank": "2",
+   "name": "Omarion Hampton",
+   "team": "LAC",
+   "pts": 31
+  },
+  {
+   "rank": "T-3",
+   "name": "Justin Herbert",
+   "team": "LAC",
+   "pts": 29
+  },
+  {
+   "rank": "T-3",
+   "name": "Zay Flowers",
+   "team": "BAL",
+   "pts": 29
+  },
+  {
+   "rank": "5",
+   "name": "Ravens defense",
+   "team": "BAL",
+   "pts": 28
+  },
+  {
+   "rank": "6",
+   "name": "Chargers defense",
+   "team": "LAC",
+   "pts": 21
+  },
+  {
+   "rank": "7",
+   "name": "Derrick Henry",
+   "team": "BAL",
+   "pts": 20
+  }
+ ]
+}
