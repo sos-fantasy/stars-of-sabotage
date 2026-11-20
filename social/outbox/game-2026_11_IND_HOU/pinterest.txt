@@ -1,0 +1,6 @@
+{
+ "title": "Top 7 fantasy football saboteurs from Texans 26, Colts 3 (week 11)",
+ "description": "Daniel Jones put up 51 Sabotage points on 15 incompletions, 1 interception, 2 sacks and 1 carry. Top 7 saboteurs from Texans 26, Colts 3 (week 11). Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+ "link": "https://starsofsabotage.com/",
+ "alt_text": "Stars of Sabotage card ranking the top 7 saboteurs from Texans 26, Colts 3 (week 11), with Sabotage points: 1. Daniel Jones IND 51; 2. C.J. Stroud HOU 33; 3. David Montgomery HOU 32; 4. Colts defense IND 28; 5. Spencer Shrader IND 24; 6. Jonathan Taylor IND 19; 7. Emari Demercado HOU 9."
+}
