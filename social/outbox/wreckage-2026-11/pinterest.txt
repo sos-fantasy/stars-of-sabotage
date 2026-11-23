@@ -1,0 +1,6 @@
+{
+ "title": "Top 7 fantasy football saboteurs from the 10 Sunday afternoon games of week 11",
+ "description": "Fernando Mendoza put up 98 Sabotage points on 19 incompletions, 1 interception (returned for a touchdown), 5 sacks and 4 carries. Top 7 saboteurs from the 10 Sunday afternoon games of week 11. Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+ "link": "https://starsofsabotage.com/",
+ "alt_text": "Stars of Sabotage card ranking the top 7 saboteurs from the 10 Sunday afternoon games of week 11, with Sabotage points: 1. Fernando Mendoza LV 98; 2. Trevor Lawrence JAX 96; 3. Tyler Shough NO 77; 4. Josh Allen BUF 71; 5. Kyle McCord MIA 64; 6. Cam Ward TEN 62; 7. Baker Mayfield TB 59."
+}

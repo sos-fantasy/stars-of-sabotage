@@ -1,0 +1,6 @@
+{
+ "title": "Top 7 fantasy football saboteurs from 49ers 35, Vikings 10 (week 11)",
+ "description": "Kirk Cousins turned 1 interception (returned for a touchdown), 12 incompletions, 1 fumble, 1 sack and 1 carry into 68 Sabotage points. Top 7 saboteurs from 49ers 35, Vikings 10 (week 11). Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+ "link": "https://starsofsabotage.com/",
+ "alt_text": "Stars of Sabotage card ranking the top 7 saboteurs from 49ers 35, Vikings 10 (week 11), with Sabotage points: 1. Kirk Cousins MIN 68; 2. Vikings defense MIN 35; 3. Justin Jefferson MIN 32; 4. Will Reichard MIN 24; 5. Christian McCaffrey SF 16; 6. Brock Purdy SF 15; 7. 49ers defense SF 14."
+}
