@@ -1,0 +1,6 @@
+{
+ "title": "Top 7 fantasy football saboteurs from Rams 26, Packers 13 (week 12)",
+ "description": "Jordan Love put up 50 Sabotage points on 12 incompletions, 2 interceptions, 1 sack and 1 carry. Top 7 saboteurs from Rams 26, Packers 13 (week 12). Every player ranked by the plays that hurt his team at starsofsabotage.com.",
+ "link": "https://starsofsabotage.com/",
+ "alt_text": "Stars of Sabotage card ranking the top 7 saboteurs from Rams 26, Packers 13 (week 12), with Sabotage points: 1. Jordan Love GB 50; 2. Matthew Stafford LA 37; 3. Blake Corum LA 36; 4. Packers defense GB 28; 5. Tucker Kraft GB 23; 6. Kyren Williams LA 20; 7. Rams defense LA 14."
+}
