@@ -197,6 +197,13 @@ def test_instagram_fetch_failure_is_retried_but_other_errors_are_not(monkeypatch
             raise SystemExit('HTTP 400 {"error_subcode": 2207052}')
         return {"id": "1"}
     assert run._retry_fetch(flaky, "t") == {"id": "1"} and len(calls) == 2
+    fb = []
+    def fb_flaky():
+        fb.append(1)
+        if len(fb) < 3:
+            raise SystemExit('HTTP 400 {"error": {"code": 324, "error_subcode": 2069019, "is_transient": true}}')
+        return {"id": "2"}
+    assert run._retry_fetch(fb_flaky, "t") == {"id": "2"} and len(fb) == 3
     def bad():
         raise SystemExit("HTTP 400 invalid token")
     with pytest.raises(SystemExit):

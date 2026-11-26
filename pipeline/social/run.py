@@ -135,14 +135,19 @@ def _live(url: str) -> bool:
         return False
 
 
+FETCH_ERRORS = ("2207052", "2069019")
+
+
 def _retry_fetch(post, label: str, tries: int = 3, pause: int = 60):
-    """Instagram sometimes cannot download a just-hosted image while Hostinger's cache warms
-    (error subcode 2207052, Nov 16, 2026; a retry two minutes later worked). Retry only that."""
+    """Instagram and Facebook sometimes cannot download a just-hosted image while Hostinger's cache
+    warms. Instagram: subcode 2207052 (Nov 16, 2026). Facebook: code 324, subcode 2069019,
+    "Missing or invalid image file", marked is_transient (Nov 23 and 26, 2026; the next run worked).
+    Retry only those."""
     for n in range(1, tries + 1):
         try:
             return post()
         except SystemExit as e:
-            if "2207052" not in str(e) or n == tries:
+            if not any(code in str(e) for code in FETCH_ERRORS) or n == tries:
                 raise
             print(f"{label}: image download failed on try {n}; retrying in {pause}s")
             time.sleep(pause)

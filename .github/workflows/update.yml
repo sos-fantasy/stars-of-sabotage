@@ -12,6 +12,10 @@ on:
         description: "Rebuild every season from 1999 (use after a scoring rule change)"
         type: boolean
         default: false
+      timer:
+        description: "Outside timer (cron-job.org): behave like the hourly schedule, no forced rebuild"
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ["pipeline/**", "site/**", "config/**", "requirements.txt", ".github/workflows/update.yml"]
@@ -51,7 +55,7 @@ jobs:
         env:
           SOS_NOINDEX: "0"   # live at starsofsabotage.com (moved out of /preview October 21, 2026)
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}   # optional: Claude's weekly review write-up
-          FORCE: ${{ github.event_name != 'schedule' && '--force' || '' }}
+          FORCE: ${{ (github.event_name == 'schedule' || inputs.timer) && '' || '--force' }}
           BACKFILL: ${{ inputs.backfill && '--backfill' || '' }}
         run: python pipeline/run.py --out dist --prev deploy $FORCE $BACKFILL
 
